@@ -1,0 +1,12 @@
+rootProject.name = 'event-hub'
+
+include(
+        'common',
+        'event-service',
+        'inventory-service',
+        'order-service',
+        'payment-service',
+        'ticket-service',
+        'notification-service'
+)
+

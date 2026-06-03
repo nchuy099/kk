@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: order-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/orderdb}
+    username: ${SPRING_DATASOURCE_USERNAME:order}
+    password: ${SPRING_DATASOURCE_PASSWORD:order}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+    web:
+      server:
+        request:
+          autotime:
+            percentiles-histogram: true
+
+server:
+  port: ${SERVER_PORT:8083}
+
+app:
+  event-base-url: ${APP_EVENT_BASE_URL:http://localhost:8081}
+  inventory-base-url: ${APP_INVENTORY_BASE_URL:http://localhost:8082}
+  payment-base-url: ${APP_PAYMENT_BASE_URL:http://localhost:8084}
