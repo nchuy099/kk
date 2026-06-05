@@ -38,7 +38,7 @@ export default function (data) {
     providerEventId: `evt-${__VU % 40}`,
     transactionId: `txn-${data.paymentId}`,
     orderId: data.orderId,
-    status: 'SUCCESS',
+    status: 'SUCCEEDED',
     amount: 500000,
   });
 

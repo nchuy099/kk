@@ -21,7 +21,7 @@ public class OrderItem {
     private Order order;
 
     @Column(nullable = false)
-    private UUID ticketTypeId;
+    private UUID ticketCategoryId;
 
     @Column(nullable = false)
     private int quantity;
@@ -32,10 +32,10 @@ public class OrderItem {
     protected OrderItem() {
     }
 
-    public static OrderItem create(UUID ticketTypeId, int quantity, BigDecimal unitPrice) {
+    public static OrderItem create(UUID ticketCategoryId, int quantity, BigDecimal unitPrice) {
         var item = new OrderItem();
         item.id = UUID.randomUUID();
-        item.ticketTypeId = ticketTypeId;
+        item.ticketCategoryId = ticketCategoryId;
         item.quantity = quantity;
         item.unitPrice = unitPrice;
         return item;
@@ -53,8 +53,8 @@ public class OrderItem {
         this.order = order;
     }
 
-    public UUID getTicketTypeId() {
-        return ticketTypeId;
+    public UUID getTicketCategoryId() {
+        return ticketCategoryId;
     }
 
     public int getQuantity() {
@@ -65,4 +65,3 @@ public class OrderItem {
         return unitPrice;
     }
 }
-

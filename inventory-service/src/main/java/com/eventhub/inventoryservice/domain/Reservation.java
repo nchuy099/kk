@@ -19,7 +19,7 @@ public class Reservation {
     private String userId;
 
     @Column(nullable = false)
-    private UUID ticketTypeId;
+    private UUID ticketCategoryId;
 
     @Column(nullable = false)
     private int quantity;
@@ -40,13 +40,13 @@ public class Reservation {
     protected Reservation() {
     }
 
-    public static Reservation create(String userId, UUID ticketTypeId, int quantity, UUID orderId, Instant expiresAt) {
+    public static Reservation create(String userId, UUID ticketCategoryId, int quantity, UUID orderId, Instant expiresAt) {
         var reservation = new Reservation();
         reservation.id = UUID.randomUUID();
         reservation.userId = userId;
-        reservation.ticketTypeId = ticketTypeId;
+        reservation.ticketCategoryId = ticketCategoryId;
         reservation.quantity = quantity;
-        reservation.status = ReservationStatus.RESERVED;
+        reservation.status = ReservationStatus.ACTIVE;
         reservation.orderId = orderId;
         reservation.expiresAt = expiresAt;
         reservation.createdAt = Instant.now();
@@ -61,8 +61,8 @@ public class Reservation {
         return userId;
     }
 
-    public UUID getTicketTypeId() {
-        return ticketTypeId;
+    public UUID getTicketCategoryId() {
+        return ticketCategoryId;
     }
 
     public int getQuantity() {
@@ -89,8 +89,8 @@ public class Reservation {
         status = ReservationStatus.CONFIRMED;
     }
 
-    public void markReleased() {
-        status = ReservationStatus.RELEASED;
+    public void markCancelled() {
+        status = ReservationStatus.CANCELLED;
     }
 
     public void markExpired() {
@@ -98,7 +98,6 @@ public class Reservation {
     }
 
     public boolean isActive() {
-        return status == ReservationStatus.RESERVED;
+        return status == ReservationStatus.ACTIVE;
     }
 }
-

@@ -7,7 +7,7 @@ public record PaymentSnapshot(
         UUID paymentId,
         UUID orderId,
         BigDecimal amount,
+        String currency,
         String status
 ) {
 }
-

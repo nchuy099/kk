@@ -22,13 +22,13 @@ public class Ticket {
     private String userId;
 
     @Column(nullable = false)
-    private UUID ticketTypeId;
+    private UUID ticketCategoryId;
 
     @Column(nullable = false, unique = true)
     private String ticketCode;
 
     @Column(nullable = false)
-    private String qrCodeUrl;
+    private String qrCodePayload;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -40,15 +40,15 @@ public class Ticket {
     protected Ticket() {
     }
 
-    public static Ticket create(UUID orderId, String userId, UUID ticketTypeId, String ticketCode) {
+    public static Ticket create(UUID orderId, String userId, UUID ticketCategoryId, String ticketCode) {
         var ticket = new Ticket();
         ticket.id = UUID.randomUUID();
         ticket.orderId = orderId;
         ticket.userId = userId;
-        ticket.ticketTypeId = ticketTypeId;
+        ticket.ticketCategoryId = ticketCategoryId;
         ticket.ticketCode = ticketCode;
-        ticket.qrCodeUrl = "qr://" + ticketCode;
-        ticket.status = TicketStatus.ACTIVE;
+        ticket.qrCodePayload = "qr://" + ticketCode;
+        ticket.status = TicketStatus.ISSUED;
         ticket.issuedAt = Instant.now();
         return ticket;
     }
@@ -65,16 +65,16 @@ public class Ticket {
         return userId;
     }
 
-    public UUID getTicketTypeId() {
-        return ticketTypeId;
+    public UUID getTicketCategoryId() {
+        return ticketCategoryId;
     }
 
     public String getTicketCode() {
         return ticketCode;
     }
 
-    public String getQrCodeUrl() {
-        return qrCodeUrl;
+    public String getQrCodePayload() {
+        return qrCodePayload;
     }
 
     public TicketStatus getStatus() {
@@ -86,7 +86,6 @@ public class Ticket {
     }
 
     public void markUsed() {
-        this.status = TicketStatus.USED;
+        this.status = TicketStatus.CHECKED_IN;
     }
 }
-

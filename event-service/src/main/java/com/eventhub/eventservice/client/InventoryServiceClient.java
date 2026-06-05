@@ -19,21 +19,21 @@ public class InventoryServiceClient {
 
     @Retry(name = "inventoryService")
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "getInventoryFallback")
-    public TicketInventorySnapshot getInventory(UUID ticketTypeId) {
+    public TicketInventorySnapshot getInventory(UUID ticketCategoryId) {
         try {
             return restClient.get()
-                    .uri("/inventories/{ticketTypeId}", ticketTypeId)
+                    .uri("/inventories/{ticketCategoryId}", ticketCategoryId)
                     .retrieve()
                     .body(TicketInventorySnapshot.class);
         } catch (RestClientResponseException exception) {
             if (exception.getStatusCode().value() == 404) {
-                throw new NotFoundException("Inventory not found for ticket type: " + ticketTypeId);
+                throw new NotFoundException("Inventory not found for ticket category: " + ticketCategoryId);
             }
             throw exception;
         }
     }
 
-    private TicketInventorySnapshot getInventoryFallback(UUID ticketTypeId, Throwable exception) {
+    private TicketInventorySnapshot getInventoryFallback(UUID ticketCategoryId, Throwable exception) {
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "inventory-service unavailable", exception);
     }
 }

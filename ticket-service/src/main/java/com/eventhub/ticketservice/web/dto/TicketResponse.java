@@ -8,11 +8,10 @@ public record TicketResponse(
         UUID id,
         UUID orderId,
         String userId,
-        UUID ticketTypeId,
+        UUID ticketCategoryId,
         String ticketCode,
-        String qrCodeUrl,
+        String qrCodePayload,
         TicketStatus status,
         Instant issuedAt
 ) {
 }
-

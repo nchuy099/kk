@@ -19,21 +19,21 @@ public class EventServiceClient {
 
     @Retry(name = "eventService")
     @CircuitBreaker(name = "eventService", fallbackMethod = "getTicketTypeFallback")
-    public TicketTypeSnapshot getTicketType(UUID ticketTypeId) {
+    public TicketTypeSnapshot getTicketType(UUID ticketCategoryId) {
         try {
             return restClient.get()
-                    .uri("/ticket-types/{id}", ticketTypeId)
+                    .uri("/ticket-categories/{id}", ticketCategoryId)
                     .retrieve()
                     .body(TicketTypeSnapshot.class);
         } catch (RestClientResponseException exception) {
             if (exception.getStatusCode().value() == 404) {
-                throw new NotFoundException("Ticket type not found: " + ticketTypeId);
+                throw new NotFoundException("Ticket category not found: " + ticketCategoryId);
             }
             throw exception;
         }
     }
 
-    private TicketTypeSnapshot getTicketTypeFallback(UUID ticketTypeId, Throwable exception) {
+    private TicketTypeSnapshot getTicketTypeFallback(UUID ticketCategoryId, Throwable exception) {
         throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "event-service unavailable", exception);
     }
 }

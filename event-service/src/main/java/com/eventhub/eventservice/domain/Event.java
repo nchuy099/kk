@@ -7,6 +7,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
@@ -26,6 +28,20 @@ public class Event {
     @Column(columnDefinition = "text")
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "competition_id", nullable = false)
+    private Competition competition;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "stadium_id", nullable = false)
+    private Stadium stadium;
+
+    @Column(nullable = false)
+    private String homeTeam;
+
+    @Column(nullable = false)
+    private String awayTeam;
+
     @Column(nullable = false)
     private Instant startTime;
 
@@ -39,9 +55,6 @@ public class Event {
     @Column(nullable = false)
     private EventStatus status;
 
-    @Column(nullable = false)
-    private String venue;
-
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TicketType> ticketTypes = new ArrayList<>();
 
@@ -52,21 +65,27 @@ public class Event {
             UUID id,
             String name,
             String description,
+            Competition competition,
+            Stadium stadium,
+            String homeTeam,
+            String awayTeam,
             Instant startTime,
             Instant saleStartTime,
             Instant saleEndTime,
-            EventStatus status,
-            String venue
+            EventStatus status
     ) {
         var event = new Event();
         event.id = id;
         event.name = name;
         event.description = description;
+        event.competition = competition;
+        event.stadium = stadium;
+        event.homeTeam = homeTeam;
+        event.awayTeam = awayTeam;
         event.startTime = startTime;
         event.saleStartTime = saleStartTime;
         event.saleEndTime = saleEndTime;
         event.status = status;
-        event.venue = venue;
         return event;
     }
 
@@ -92,6 +111,38 @@ public class Event {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Competition getCompetition() {
+        return competition;
+    }
+
+    public void setCompetition(Competition competition) {
+        this.competition = competition;
+    }
+
+    public Stadium getStadium() {
+        return stadium;
+    }
+
+    public void setStadium(Stadium stadium) {
+        this.stadium = stadium;
+    }
+
+    public String getHomeTeam() {
+        return homeTeam;
+    }
+
+    public void setHomeTeam(String homeTeam) {
+        this.homeTeam = homeTeam;
+    }
+
+    public String getAwayTeam() {
+        return awayTeam;
+    }
+
+    public void setAwayTeam(String awayTeam) {
+        this.awayTeam = awayTeam;
     }
 
     public Instant getStartTime() {
@@ -124,14 +175,6 @@ public class Event {
 
     public void setStatus(EventStatus status) {
         this.status = status;
-    }
-
-    public String getVenue() {
-        return venue;
-    }
-
-    public void setVenue(String venue) {
-        this.venue = venue;
     }
 
     public List<TicketType> getTicketTypes() {

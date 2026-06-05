@@ -1,6 +1,6 @@
 package com.eventhub.orderservice.service;
 
-import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.OrderConfirmedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.orderservice.domain.OrderOutboxEventStatus;
 import com.eventhub.orderservice.repository.OrderOutboxEventRepository;
@@ -33,8 +33,8 @@ public class OrderOutboxPublisher {
         var pending = outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(OrderOutboxEventStatus.PENDING);
         for (var event : pending) {
             try {
-                var payload = objectMapper.readValue(event.getPayload(), OrderPaidEventV1.class);
-                rabbitTemplate.convertAndSend(RabbitTopics.ORDER_EXCHANGE, RabbitTopics.ORDER_PAID_ROUTING_KEY, payload);
+                var payload = objectMapper.readValue(event.getPayload(), OrderConfirmedEventV1.class);
+                rabbitTemplate.convertAndSend(RabbitTopics.ORDER_EXCHANGE, RabbitTopics.ORDER_CONFIRMED_ROUTING_KEY, payload);
                 event.markSent();
             } catch (IOException exception) {
                 event.markFailed();

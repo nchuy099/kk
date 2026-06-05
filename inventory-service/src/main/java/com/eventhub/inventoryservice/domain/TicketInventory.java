@@ -14,7 +14,7 @@ public class TicketInventory {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private UUID ticketTypeId;
+    private UUID ticketCategoryId;
 
     @Column(nullable = false)
     private int totalQuantity;
@@ -34,10 +34,10 @@ public class TicketInventory {
     protected TicketInventory() {
     }
 
-    public static TicketInventory create(UUID ticketTypeId, int totalQuantity) {
+    public static TicketInventory create(UUID ticketCategoryId, int totalQuantity) {
         var inventory = new TicketInventory();
         inventory.id = UUID.randomUUID();
-        inventory.ticketTypeId = ticketTypeId;
+        inventory.ticketCategoryId = ticketCategoryId;
         inventory.totalQuantity = totalQuantity;
         inventory.availableQuantity = totalQuantity;
         inventory.reservedQuantity = 0;
@@ -49,8 +49,8 @@ public class TicketInventory {
         return id;
     }
 
-    public UUID getTicketTypeId() {
-        return ticketTypeId;
+    public UUID getTicketCategoryId() {
+        return ticketCategoryId;
     }
 
     public int getTotalQuantity() {

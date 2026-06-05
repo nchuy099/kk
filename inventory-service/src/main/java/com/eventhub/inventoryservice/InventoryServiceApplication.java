@@ -24,15 +24,15 @@ public class InventoryServiceApplication {
     @Bean
     CommandLineRunner seedInventory(
             TicketInventoryRepository inventoryRepository,
-            @Value("${app.demo.vip-ticket-type-id}") UUID vipTicketTypeId,
-            @Value("${app.demo.ga-ticket-type-id}") UUID gaTicketTypeId
+            @Value("${app.demo.category1-ticket-category-id}") UUID category1TicketCategoryId,
+            @Value("${app.demo.category2-ticket-category-id}") UUID category2TicketCategoryId
     ) {
         return args -> {
-            if (inventoryRepository.findByTicketTypeId(vipTicketTypeId).isEmpty()) {
-                inventoryRepository.save(TicketInventory.create(vipTicketTypeId, 100));
+            if (inventoryRepository.findByTicketCategoryId(category1TicketCategoryId).isEmpty()) {
+                inventoryRepository.save(TicketInventory.create(category1TicketCategoryId, 100));
             }
-            if (inventoryRepository.findByTicketTypeId(gaTicketTypeId).isEmpty()) {
-                inventoryRepository.save(TicketInventory.create(gaTicketTypeId, 500));
+            if (inventoryRepository.findByTicketCategoryId(category2TicketCategoryId).isEmpty()) {
+                inventoryRepository.save(TicketInventory.create(category2TicketCategoryId, 500));
             }
         };
     }

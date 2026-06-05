@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "ticket_types")
+@Table(name = "ticket_categories")
 public class TicketType {
     @Id
     private UUID id;
@@ -25,8 +25,14 @@ public class TicketType {
     @Column(nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String sectionName;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal price;
+
+    @Column(nullable = false)
+    private String currency;
 
     @Column(nullable = false)
     private int totalQuantity;
@@ -42,7 +48,9 @@ public class TicketType {
             UUID id,
             Event event,
             String name,
+            String sectionName,
             BigDecimal price,
+            String currency,
             int totalQuantity,
             TicketTypeStatus status
     ) {
@@ -50,7 +58,9 @@ public class TicketType {
         ticketType.id = id;
         ticketType.event = event;
         ticketType.name = name;
+        ticketType.sectionName = sectionName;
         ticketType.price = price;
+        ticketType.currency = currency;
         ticketType.totalQuantity = totalQuantity;
         ticketType.status = status;
         return ticketType;
@@ -80,12 +90,28 @@ public class TicketType {
         this.name = name;
     }
 
+    public String getSectionName() {
+        return sectionName;
+    }
+
+    public void setSectionName(String sectionName) {
+        this.sectionName = sectionName;
+    }
+
     public BigDecimal getPrice() {
         return price;
     }
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
     }
 
     public int getTotalQuantity() {

@@ -8,9 +8,8 @@ import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
 
 public interface TicketInventoryRepository extends JpaRepository<TicketInventory, UUID> {
-    Optional<TicketInventory> findByTicketTypeId(UUID ticketTypeId);
+    Optional<TicketInventory> findByTicketCategoryId(UUID ticketCategoryId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    Optional<TicketInventory> findLockedByTicketTypeId(UUID ticketTypeId);
+    Optional<TicketInventory> findLockedByTicketCategoryId(UUID ticketCategoryId);
 }
-

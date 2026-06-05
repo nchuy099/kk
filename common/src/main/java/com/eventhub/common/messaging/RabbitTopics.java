@@ -16,15 +16,15 @@ public final class RabbitTopics {
     public static final String NOTIFICATION_DLX = "notification.dlx";
 
     public static final String PAYMENT_SUCCESS_ROUTING_KEY = "payment.succeeded";
-    public static final String ORDER_PAID_ROUTING_KEY = "order.paid";
+    public static final String ORDER_CONFIRMED_ROUTING_KEY = "order.confirmed";
     public static final String TICKET_ISSUED_ROUTING_KEY = "ticket.issued";
 
     public static final String ORDER_PAYMENT_SUCCEEDED_QUEUE = "order.payment-succeeded";
     public static final String ORDER_PAYMENT_SUCCEEDED_DLQ = "order.payment-succeeded.dlq";
-    public static final String INVENTORY_ORDER_PAID_QUEUE = "inventory.order-paid";
-    public static final String INVENTORY_ORDER_PAID_DLQ = "inventory.order-paid.dlq";
-    public static final String TICKET_ORDER_PAID_QUEUE = "ticket.order-paid";
-    public static final String TICKET_ORDER_PAID_DLQ = "ticket.order-paid.dlq";
+    public static final String INVENTORY_ORDER_CONFIRMED_QUEUE = "inventory.order-confirmed";
+    public static final String INVENTORY_ORDER_CONFIRMED_DLQ = "inventory.order-confirmed.dlq";
+    public static final String TICKET_ORDER_CONFIRMED_QUEUE = "ticket.order-confirmed";
+    public static final String TICKET_ORDER_CONFIRMED_DLQ = "ticket.order-confirmed.dlq";
     public static final String NOTIFICATION_TICKET_ISSUED_QUEUE = "notification.ticket-issued";
     public static final String NOTIFICATION_TICKET_ISSUED_DLQ = "notification.ticket-issued.dlq";
 }

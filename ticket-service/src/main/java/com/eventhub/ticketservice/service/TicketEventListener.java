@@ -1,6 +1,6 @@
 package com.eventhub.ticketservice.service;
 
-import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.OrderConfirmedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -13,8 +13,8 @@ public class TicketEventListener {
         this.ticketService = ticketService;
     }
 
-    @RabbitListener(queues = RabbitTopics.TICKET_ORDER_PAID_QUEUE)
-    public void onOrderPaid(OrderPaidEventV1 event) {
-        ticketService.handleOrderPaid(event);
+    @RabbitListener(queues = RabbitTopics.TICKET_ORDER_CONFIRMED_QUEUE)
+    public void onOrderConfirmed(OrderConfirmedEventV1 event) {
+        ticketService.handleOrderConfirmed(event);
     }
 }

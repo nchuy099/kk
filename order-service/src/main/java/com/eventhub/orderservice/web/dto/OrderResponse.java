@@ -9,12 +9,13 @@ import java.util.UUID;
 public record OrderResponse(
         UUID id,
         String userId,
+        UUID eventId,
         UUID reservationId,
         UUID paymentId,
         BigDecimal totalAmount,
+        String currency,
         OrderStatus status,
         Instant expiresAt,
         List<OrderItemResponse> items
 ) {
 }
-

@@ -4,9 +4,8 @@ import java.util.UUID;
 
 public record ReserveOrderRequest(
         String userId,
-        UUID ticketTypeId,
+        UUID ticketCategoryId,
         UUID orderId,
         int quantity
 ) {
 }
-

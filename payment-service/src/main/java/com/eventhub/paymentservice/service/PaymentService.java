@@ -53,7 +53,7 @@ public class PaymentService {
         if (existing.isPresent()) {
             return toResponse(existing.get());
         }
-        var payment = Payment.create(request.orderId(), request.amount());
+        var payment = Payment.create(request.orderId(), request.amount(), request.currency());
         return toResponse(paymentRepository.save(payment));
     }
 
@@ -68,7 +68,7 @@ public class PaymentService {
                 "mock-" + paymentId,
                 "txn-" + paymentId,
                 payment.getOrderId(),
-                "SUCCESS",
+                "SUCCEEDED",
                 payment.getAmount()
         );
         return handleWebhook(request);
@@ -97,8 +97,8 @@ public class PaymentService {
             return toResponse(payment);
         }
 
-        if ("SUCCESS".equalsIgnoreCase(request.status())) {
-            if (payment.getStatus() != PaymentStatus.SUCCESS) {
+        if ("SUCCEEDED".equalsIgnoreCase(request.status()) || "SUCCESS".equalsIgnoreCase(request.status())) {
+            if (payment.getStatus() != PaymentStatus.SUCCEEDED) {
                 payment.markSuccess(request.transactionId());
                 payment = paymentRepository.save(payment);
                 createPaymentSucceededOutboxEvent(payment);
@@ -106,7 +106,7 @@ public class PaymentService {
             return toResponse(payment);
         }
 
-        if (payment.getStatus() != PaymentStatus.SUCCESS) {
+        if (payment.getStatus() != PaymentStatus.SUCCEEDED) {
             payment.markFailed(request.transactionId());
             payment = paymentRepository.save(payment);
         }
@@ -153,6 +153,7 @@ public class PaymentService {
                 payment.getId(),
                 payment.getOrderId(),
                 payment.getAmount(),
+                payment.getCurrency(),
                 payment.getStatus(),
                 payment.getTransactionId()
         );

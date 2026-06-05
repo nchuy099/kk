@@ -7,14 +7,16 @@ import java.util.UUID;
 
 public record EventResponse(
         UUID id,
+        UUID competitionId,
+        UUID stadiumId,
         String name,
         String description,
+        String homeTeam,
+        String awayTeam,
         Instant startTime,
         Instant saleStartTime,
         Instant saleEndTime,
         EventStatus status,
-        String venue,
-        List<TicketTypeResponse> ticketTypes
+        List<TicketTypeResponse> ticketCategories
 ) {
 }
-

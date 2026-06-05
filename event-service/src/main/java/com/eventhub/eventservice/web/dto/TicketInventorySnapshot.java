@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public record TicketInventorySnapshot(
         UUID id,
-        UUID ticketTypeId,
+        UUID ticketCategoryId,
         int totalQuantity,
         int availableQuantity,
         int reservedQuantity,

@@ -2,9 +2,8 @@ package com.eventhub.orderservice.domain;
 
 public enum OrderStatus {
     PENDING_PAYMENT,
-    PAID,
+    CONFIRMED,
     CANCELLED,
     EXPIRED,
-    FAILED
+    PAYMENT_FAILED
 }
-

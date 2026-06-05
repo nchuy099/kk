@@ -6,8 +6,9 @@ import java.math.BigDecimal;
 
 public record CreateTicketTypeRequest(
         @NotBlank String name,
+        @NotBlank String sectionName,
         @NotNull BigDecimal price,
+        @NotBlank String currency,
         int totalQuantity
 ) {
 }
-

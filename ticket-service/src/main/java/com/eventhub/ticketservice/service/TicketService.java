@@ -1,6 +1,6 @@
 package com.eventhub.ticketservice.service;
 
-import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.OrderConfirmedEventV1;
 import com.eventhub.common.events.v1.TicketIssuedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.ticketservice.domain.Ticket;
@@ -47,7 +47,7 @@ public class TicketService {
     }
 
     @Transactional
-    public void issueTickets(OrderPaidEventV1 event) {
+    public void issueTickets(OrderConfirmedEventV1 event) {
         if (ticketIssuanceRepository.existsByOrderId(event.orderId())) {
             return;
         }
@@ -62,7 +62,7 @@ public class TicketService {
         for (int index = 1; index <= event.quantity(); index++) {
             var ticketCode = buildTicketCode(event.orderId(), index);
             issuedCodes.add(ticketCode);
-            ticketRepository.save(Ticket.create(event.orderId(), event.userId(), event.ticketTypeId(), ticketCode));
+            ticketRepository.save(Ticket.create(event.orderId(), event.userId(), event.ticketCategoryId(), ticketCode));
         }
 
         createTicketIssuedOutboxEvent(event, issuedCodes);
@@ -72,6 +72,10 @@ public class TicketService {
         return ticketRepository.findByUserId(userId).stream().map(this::toResponse).toList();
     }
 
+    public List<TicketResponse> getTicketsForOrder(UUID orderId) {
+        return ticketRepository.findByOrderId(orderId).stream().map(this::toResponse).toList();
+    }
+
     public TicketResponse getByTicketCode(String ticketCode) {
         return toResponse(findTicketByCode(ticketCode));
     }
@@ -79,7 +83,7 @@ public class TicketService {
     @Transactional
     public TicketResponse checkIn(String ticketCode) {
         var ticket = findTicketByCode(ticketCode);
-        if (ticket.getStatus() == TicketStatus.USED) {
+        if (ticket.getStatus() == TicketStatus.CHECKED_IN) {
             throw new TicketConflictException("Ticket already checked in");
         }
         if (ticket.getStatus() == TicketStatus.CANCELLED) {
@@ -90,7 +94,7 @@ public class TicketService {
     }
 
     @Transactional
-    public void handleOrderPaid(OrderPaidEventV1 event) {
+    public void handleOrderConfirmed(OrderConfirmedEventV1 event) {
         issueTickets(event);
     }
 
@@ -104,9 +108,9 @@ public class TicketService {
                 ticket.getId(),
                 ticket.getOrderId(),
                 ticket.getUserId(),
-                ticket.getTicketTypeId(),
+                ticket.getTicketCategoryId(),
                 ticket.getTicketCode(),
-                ticket.getQrCodeUrl(),
+                ticket.getQrCodePayload(),
                 ticket.getStatus(),
                 ticket.getIssuedAt()
         );
@@ -117,21 +121,21 @@ public class TicketService {
         return "EVT-" + compactOrderId + "-" + index + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
     }
 
-    private void createTicketIssuedOutboxEvent(OrderPaidEventV1 orderPaidEvent, List<String> issuedCodes) {
+    private void createTicketIssuedOutboxEvent(OrderConfirmedEventV1 orderConfirmedEvent, List<String> issuedCodes) {
         var event = new TicketIssuedEventV1(
                 UUID.randomUUID().toString(),
                 "TicketIssuedEvent",
                 RabbitTopics.EVENT_VERSION_V1,
                 currentCorrelationId(),
                 java.time.Instant.now(),
-                orderPaidEvent.orderId(),
-                orderPaidEvent.userId(),
+                orderConfirmedEvent.orderId(),
+                orderConfirmedEvent.userId(),
                 issuedCodes
         );
         try {
             outboxEventRepository.save(TicketOutboxEvent.create(
                     "Ticket",
-                    orderPaidEvent.orderId().toString(),
+                    orderConfirmedEvent.orderId().toString(),
                     event.eventType(),
                     event.eventVersion(),
                     objectMapper.writeValueAsString(event)

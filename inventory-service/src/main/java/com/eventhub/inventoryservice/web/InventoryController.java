@@ -42,9 +42,8 @@ public class InventoryController {
         return inventoryService.release(id);
     }
 
-    @GetMapping("/inventories/{ticketTypeId}")
-    public TicketInventoryResponse getInventory(@PathVariable UUID ticketTypeId) {
-        return inventoryService.getInventory(ticketTypeId);
+    @GetMapping("/inventories/{ticketCategoryId}")
+    public TicketInventoryResponse getInventory(@PathVariable UUID ticketCategoryId) {
+        return inventoryService.getInventory(ticketCategoryId);
     }
 }
-

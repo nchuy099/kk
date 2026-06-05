@@ -23,6 +23,9 @@ public class Payment {
     private BigDecimal amount;
 
     @Column(nullable = false)
+    private String currency;
+
+    @Column(nullable = false)
     private String provider;
 
     @Enumerated(EnumType.STRING)
@@ -38,11 +41,12 @@ public class Payment {
     protected Payment() {
     }
 
-    public static Payment create(UUID orderId, BigDecimal amount) {
+    public static Payment create(UUID orderId, BigDecimal amount, String currency) {
         var payment = new Payment();
         payment.id = UUID.randomUUID();
         payment.orderId = orderId;
         payment.amount = amount;
+        payment.currency = currency;
         payment.provider = "MOCK_PROVIDER";
         payment.status = PaymentStatus.PENDING;
         payment.transactionId = "txn-" + UUID.randomUUID();
@@ -66,6 +70,10 @@ public class Payment {
         return provider;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
     public PaymentStatus getStatus() {
         return status;
     }
@@ -79,7 +87,7 @@ public class Payment {
     }
 
     public void markSuccess(String transactionId) {
-        this.status = PaymentStatus.SUCCESS;
+        this.status = PaymentStatus.SUCCEEDED;
         this.transactionId = transactionId;
     }
 
@@ -88,4 +96,3 @@ public class Payment {
         this.transactionId = transactionId;
     }
 }
-

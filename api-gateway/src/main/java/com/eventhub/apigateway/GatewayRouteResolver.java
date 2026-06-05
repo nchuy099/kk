@@ -31,7 +31,17 @@ public class GatewayRouteResolver {
     }
 
     private String baseUrlFor(String path) {
-        if (path.startsWith("/api/events") || path.startsWith("/api/ticket-types") || path.startsWith("/api/admin/events")) {
+        if (path.matches("^/api/orders/[^/]+/tickets$")) {
+            return properties.routes().ticketsBaseUrl();
+        }
+        if (path.startsWith("/api/competitions")
+                || path.startsWith("/api/events")
+                || path.startsWith("/api/stadiums")
+                || path.startsWith("/api/ticket-categories")
+                || path.startsWith("/api/ticket-types")
+                || path.startsWith("/api/admin/events")
+                || path.startsWith("/api/admin/competitions")
+                || path.startsWith("/api/admin/stadiums")) {
             return properties.routes().eventsBaseUrl();
         }
         if (path.startsWith("/api/orders")) {

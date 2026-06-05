@@ -8,7 +8,9 @@ public record TicketTypeResponse(
         UUID id,
         UUID eventId,
         String name,
+        String sectionName,
         BigDecimal price,
+        String currency,
         int totalQuantity,
         int availableQuantity,
         TicketTypeStatus status

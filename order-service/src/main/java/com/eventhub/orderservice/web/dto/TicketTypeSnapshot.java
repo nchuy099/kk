@@ -7,9 +7,10 @@ public record TicketTypeSnapshot(
         UUID id,
         UUID eventId,
         String name,
+        String sectionName,
         BigDecimal price,
+        String currency,
         int totalQuantity,
         String status
 ) {
 }
-

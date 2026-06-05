@@ -6,11 +6,10 @@ import java.util.UUID;
 public record ReservationSnapshot(
         UUID id,
         String userId,
-        UUID ticketTypeId,
+        UUID ticketCategoryId,
         int quantity,
         String status,
         Instant expiresAt,
         UUID orderId
 ) {
 }
-

@@ -1,6 +1,6 @@
 package com.eventhub.orderservice.service;
 
-import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.OrderConfirmedEventV1;
 import com.eventhub.common.events.v1.PaymentSucceededEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.orderservice.client.EventServiceClient;
@@ -59,22 +59,29 @@ public class OrderService {
 
     @Transactional
     public OrderResponse createOrder(String userId, CreateOrderRequest request) {
+        if (request.items().size() != 1) {
+            throw new OrderConflictException("Only one ticket category per order is currently supported");
+        }
+        var firstItem = request.items().get(0);
         var orderId = UUID.randomUUID();
-        var ticketType = eventServiceClient.getTicketType(request.ticketTypeId());
+        var ticketType = eventServiceClient.getTicketType(firstItem.ticketCategoryId());
+        if (!ticketType.eventId().equals(request.eventId())) {
+            throw new OrderConflictException("Ticket category does not belong to the selected event");
+        }
         var reservation = inventoryServiceClient.reserve(new ReserveOrderRequest(
                 userId,
-                request.ticketTypeId(),
+                firstItem.ticketCategoryId(),
                 orderId,
-                request.quantity()
+                firstItem.quantity()
         ));
 
         var unitPrice = ticketType.price();
-        var totalAmount = unitPrice.multiply(BigDecimal.valueOf(request.quantity()));
-        var order = Order.create(orderId, userId, reservation.id(), totalAmount, reservation.expiresAt());
-        order.addItem(OrderItem.create(ticketType.id(), request.quantity(), unitPrice));
+        var totalAmount = unitPrice.multiply(BigDecimal.valueOf(firstItem.quantity()));
+        var order = Order.create(orderId, userId, request.eventId(), reservation.id(), totalAmount, ticketType.currency(), reservation.expiresAt());
+        order.addItem(OrderItem.create(ticketType.id(), firstItem.quantity(), unitPrice));
         order = orderRepository.save(order);
 
-        var payment = paymentServiceClient.createPayment(new CreatePaymentRequest(order.getId(), totalAmount));
+        var payment = paymentServiceClient.createPayment(new CreatePaymentRequest(order.getId(), totalAmount, order.getCurrency()));
         order.setPaymentId(payment.paymentId());
         return toResponse(orderRepository.save(order));
     }
@@ -86,8 +93,8 @@ public class OrderService {
     @Transactional
     public OrderResponse cancel(UUID id) {
         var order = findOrder(id);
-        if (order.getStatus() == OrderStatus.PAID) {
-            throw new OrderConflictException("Paid order cannot be cancelled");
+        if (order.getStatus() == OrderStatus.CONFIRMED) {
+            throw new OrderConflictException("Confirmed order cannot be cancelled");
         }
         inventoryServiceClient.release(order.getReservationId().toString());
         order.setStatus(OrderStatus.CANCELLED);
@@ -100,12 +107,12 @@ public class OrderService {
         if (order == null || order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             return;
         }
-        order.setStatus(OrderStatus.PAID);
+        order.setStatus(OrderStatus.CONFIRMED);
         order.setPaymentId(event.paymentId());
         orderRepository.save(order);
 
         var item = order.getItems().get(0);
-        createOrderPaidOutboxEvent(order, item, event.paymentId());
+        createOrderConfirmedOutboxEvent(order, item, event.paymentId());
     }
 
     private Order findOrder(UUID id) {
@@ -128,24 +135,26 @@ public class OrderService {
         return new OrderResponse(
                 order.getId(),
                 order.getUserId(),
+                order.getEventId(),
                 order.getReservationId(),
                 order.getPaymentId(),
                 order.getTotalAmount(),
+                order.getCurrency(),
                 order.getStatus(),
                 order.getExpiresAt(),
                 order.getItems().stream().map(item -> new OrderItemResponse(
                         item.getId(),
-                        item.getTicketTypeId(),
+                        item.getTicketCategoryId(),
                         item.getQuantity(),
                         item.getUnitPrice()
                 )).toList()
         );
     }
 
-    private void createOrderPaidOutboxEvent(Order order, OrderItem item, UUID paymentId) {
-        var event = new OrderPaidEventV1(
+    private void createOrderConfirmedOutboxEvent(Order order, OrderItem item, UUID paymentId) {
+        var event = new OrderConfirmedEventV1(
                 UUID.randomUUID().toString(),
-                "OrderPaidEvent",
+                "OrderConfirmedEvent",
                 RabbitTopics.EVENT_VERSION_V1,
                 currentCorrelationId(),
                 java.time.Instant.now(),
@@ -153,9 +162,11 @@ public class OrderService {
                 order.getReservationId(),
                 paymentId,
                 order.getUserId(),
-                item.getTicketTypeId(),
+                order.getEventId(),
+                item.getTicketCategoryId(),
                 item.getQuantity(),
-                order.getTotalAmount()
+                order.getTotalAmount(),
+                order.getCurrency()
         );
         try {
             outboxEventRepository.save(OrderOutboxEvent.create(

@@ -28,7 +28,18 @@ public class GatewaySecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/events", "/api/events/**", "/api/ticket-types", "/api/ticket-types/**").permitAll()
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/competitions",
+                                "/api/competitions/**",
+                                "/api/events",
+                                "/api/events/**",
+                                "/api/stadiums/**",
+                                "/api/ticket-categories",
+                                "/api/ticket-categories/**",
+                                "/api/ticket-types",
+                                "/api/ticket-types/**"
+                        ).permitAll()
                         .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/admin/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/orders/**", "/api/payments/**", "/api/tickets/**").hasAnyRole("USER", "ADMIN")

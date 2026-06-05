@@ -7,11 +7,10 @@ import java.util.UUID;
 public record ReservationResponse(
         UUID id,
         String userId,
-        UUID ticketTypeId,
+        UUID ticketCategoryId,
         int quantity,
         ReservationStatus status,
         Instant expiresAt,
         UUID orderId
 ) {
 }
-

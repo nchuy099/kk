@@ -5,9 +5,8 @@ import java.util.UUID;
 
 public record OrderItemResponse(
         UUID id,
-        UUID ticketTypeId,
+        UUID ticketCategoryId,
         int quantity,
         BigDecimal unitPrice
 ) {
 }
-

@@ -1,8 +1,7 @@
 package com.eventhub.ticketservice.domain;
 
 public enum TicketStatus {
-    ACTIVE,
-    USED,
+    ISSUED,
+    CHECKED_IN,
     CANCELLED
 }
-

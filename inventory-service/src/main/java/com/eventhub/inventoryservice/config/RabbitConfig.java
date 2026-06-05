@@ -26,26 +26,26 @@ public class RabbitConfig {
     }
 
     @Bean
-    Queue orderPaidQueue() {
+    Queue orderConfirmedQueue() {
         Map<String, Object> arguments = new HashMap<>();
         arguments.put("x-dead-letter-exchange", RabbitTopics.ORDER_DLX);
-        arguments.put("x-dead-letter-routing-key", RabbitTopics.INVENTORY_ORDER_PAID_DLQ);
-        return new Queue(RabbitTopics.INVENTORY_ORDER_PAID_QUEUE, true, false, false, arguments);
+        arguments.put("x-dead-letter-routing-key", RabbitTopics.INVENTORY_ORDER_CONFIRMED_DLQ);
+        return new Queue(RabbitTopics.INVENTORY_ORDER_CONFIRMED_QUEUE, true, false, false, arguments);
     }
 
     @Bean
-    Binding orderPaidBinding(Queue orderPaidQueue, TopicExchange orderExchange) {
-        return BindingBuilder.bind(orderPaidQueue).to(orderExchange).with(RabbitTopics.ORDER_PAID_ROUTING_KEY);
+    Binding orderConfirmedBinding(Queue orderConfirmedQueue, TopicExchange orderExchange) {
+        return BindingBuilder.bind(orderConfirmedQueue).to(orderExchange).with(RabbitTopics.ORDER_CONFIRMED_ROUTING_KEY);
     }
 
     @Bean
-    Queue orderPaidDlq() {
-        return QueueBuilder.durable(RabbitTopics.INVENTORY_ORDER_PAID_DLQ).build();
+    Queue orderConfirmedDlq() {
+        return QueueBuilder.durable(RabbitTopics.INVENTORY_ORDER_CONFIRMED_DLQ).build();
     }
 
     @Bean
-    Binding orderPaidDlqBinding(Queue orderPaidDlq, TopicExchange orderDeadLetterExchange) {
-        return BindingBuilder.bind(orderPaidDlq).to(orderDeadLetterExchange).with(RabbitTopics.INVENTORY_ORDER_PAID_DLQ);
+    Binding orderConfirmedDlqBinding(Queue orderConfirmedDlq, TopicExchange orderDeadLetterExchange) {
+        return BindingBuilder.bind(orderConfirmedDlq).to(orderDeadLetterExchange).with(RabbitTopics.INVENTORY_ORDER_CONFIRMED_DLQ);
     }
 
     @Bean

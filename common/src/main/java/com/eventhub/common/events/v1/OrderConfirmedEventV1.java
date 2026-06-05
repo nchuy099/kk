@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-public record OrderPaidEventV1(
+public record OrderConfirmedEventV1(
         String eventId,
         String eventType,
         String eventVersion,
@@ -14,8 +14,10 @@ public record OrderPaidEventV1(
         UUID reservationId,
         UUID paymentId,
         String userId,
-        UUID ticketTypeId,
+        UUID eventRefId,
+        UUID ticketCategoryId,
         int quantity,
-        BigDecimal totalAmount
+        BigDecimal totalAmount,
+        String currency
 ) {
 }

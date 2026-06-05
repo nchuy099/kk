@@ -8,8 +8,8 @@ public record PaymentResponse(
         UUID paymentId,
         UUID orderId,
         BigDecimal amount,
+        String currency,
         PaymentStatus status,
         String transactionId
 ) {
 }
-

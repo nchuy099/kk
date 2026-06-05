@@ -18,8 +18,13 @@ export function setup() {
 
 export default function (data) {
   const payload = JSON.stringify({
-    ticketTypeId: '11111111-1111-1111-1111-111111111111',
-    quantity: 1,
+    eventId: '00000000-0000-0000-0000-000000000101',
+    items: [
+      {
+        ticketCategoryId: '11111111-1111-1111-1111-111111111111',
+        quantity: 1,
+      },
+    ],
   });
 
   const params = {

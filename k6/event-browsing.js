@@ -12,7 +12,13 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get('http://localhost:8080/api/events');
-  check(res, { 'status is 200': (r) => r.status === 200 });
+  const competitions = http.get('http://localhost:8080/api/competitions');
+  check(competitions, { 'competitions status is 200': (r) => r.status === 200 });
+
+  const events = http.get('http://localhost:8080/api/competitions/00000000-0000-0000-0000-000000000001/events');
+  check(events, { 'competition events status is 200': (r) => r.status === 200 });
+
+  const categories = http.get('http://localhost:8080/api/events/00000000-0000-0000-0000-000000000101/ticket-categories');
+  check(categories, { 'ticket categories status is 200': (r) => r.status === 200 });
   sleep(1);
 }

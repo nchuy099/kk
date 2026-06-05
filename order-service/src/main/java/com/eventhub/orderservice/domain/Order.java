@@ -28,8 +28,14 @@ public class Order {
     @Column
     private UUID paymentId;
 
+    @Column(nullable = false)
+    private UUID eventId;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal totalAmount;
+
+    @Column(nullable = false)
+    private String currency;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -50,12 +56,14 @@ public class Order {
     protected Order() {
     }
 
-    public static Order create(UUID id, String userId, UUID reservationId, BigDecimal totalAmount, Instant expiresAt) {
+    public static Order create(UUID id, String userId, UUID eventId, UUID reservationId, BigDecimal totalAmount, String currency, Instant expiresAt) {
         var order = new Order();
         order.id = id;
         order.userId = userId;
+        order.eventId = eventId;
         order.reservationId = reservationId;
         order.totalAmount = totalAmount;
+        order.currency = currency;
         order.status = OrderStatus.PENDING_PAYMENT;
         order.expiresAt = expiresAt;
         order.createdAt = Instant.now();
@@ -85,6 +93,14 @@ public class Order {
 
     public BigDecimal getTotalAmount() {
         return totalAmount;
+    }
+
+    public UUID getEventId() {
+        return eventId;
+    }
+
+    public String getCurrency() {
+        return currency;
     }
 
     public OrderStatus getStatus() {
@@ -117,4 +133,3 @@ public class Order {
         items.add(item);
     }
 }
-

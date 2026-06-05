@@ -1,6 +1,6 @@
 package com.eventhub.inventoryservice.service;
 
-import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.OrderConfirmedEventV1;
 import com.eventhub.inventoryservice.domain.Reservation;
 import com.eventhub.inventoryservice.domain.ReservationStatus;
 import com.eventhub.inventoryservice.domain.TicketInventory;
@@ -38,8 +38,8 @@ public class InventoryService {
 
     @Transactional
     public ReservationResponse reserve(ReserveRequest request) {
-        var inventory = inventoryRepository.findLockedByTicketTypeId(request.ticketTypeId())
-                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket type: " + request.ticketTypeId()));
+        var inventory = inventoryRepository.findLockedByTicketCategoryId(request.ticketCategoryId())
+                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket category: " + request.ticketCategoryId()));
 
         if (inventory.getAvailableQuantity() < request.quantity()) {
             throw new ReservationConflictException("Not enough available tickets");
@@ -50,7 +50,7 @@ public class InventoryService {
 
         var reservation = Reservation.create(
                 request.userId(),
-                request.ticketTypeId(),
+                request.ticketCategoryId(),
                 request.quantity(),
                 request.orderId(),
                 Instant.now().plus(reservationTtl)
@@ -68,12 +68,12 @@ public class InventoryService {
         if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
             return toResponse(reservation);
         }
-        if (reservation.getStatus() != ReservationStatus.RESERVED) {
+        if (reservation.getStatus() != ReservationStatus.ACTIVE) {
             return toResponse(reservation);
         }
 
-        var inventory = inventoryRepository.findLockedByTicketTypeId(reservation.getTicketTypeId())
-                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket type: " + reservation.getTicketTypeId()));
+        var inventory = inventoryRepository.findLockedByTicketCategoryId(reservation.getTicketCategoryId())
+                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket category: " + reservation.getTicketCategoryId()));
         inventory.confirm(reservation.getQuantity());
         inventoryRepository.save(inventory);
 
@@ -84,35 +84,35 @@ public class InventoryService {
     @Transactional
     public ReservationResponse release(UUID id) {
         var reservation = findReservation(id);
-        if (reservation.getStatus() == ReservationStatus.RELEASED || reservation.getStatus() == ReservationStatus.EXPIRED) {
+        if (reservation.getStatus() == ReservationStatus.CANCELLED || reservation.getStatus() == ReservationStatus.EXPIRED) {
             return toResponse(reservation);
         }
         if (reservation.getStatus() == ReservationStatus.CONFIRMED) {
             return toResponse(reservation);
         }
 
-        var inventory = inventoryRepository.findLockedByTicketTypeId(reservation.getTicketTypeId())
-                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket type: " + reservation.getTicketTypeId()));
+        var inventory = inventoryRepository.findLockedByTicketCategoryId(reservation.getTicketCategoryId())
+                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket category: " + reservation.getTicketCategoryId()));
         inventory.release(reservation.getQuantity());
         inventoryRepository.save(inventory);
 
-        reservation.markReleased();
+        reservation.markCancelled();
         return toResponse(reservationRepository.save(reservation));
     }
 
-    public TicketInventoryResponse getInventory(UUID ticketTypeId) {
-        var inventory = inventoryRepository.findByTicketTypeId(ticketTypeId)
-                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket type: " + ticketTypeId));
+    public TicketInventoryResponse getInventory(UUID ticketCategoryId) {
+        var inventory = inventoryRepository.findByTicketCategoryId(ticketCategoryId)
+                .orElseThrow(() -> new NotFoundException("Inventory not found for ticket category: " + ticketCategoryId));
         return toResponse(inventory);
     }
 
     @Scheduled(fixedDelay = 30_000L)
     @Transactional
     public void expireReservations() {
-        var expiredReservations = reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.RESERVED, Instant.now());
+        var expiredReservations = reservationRepository.findByStatusAndExpiresAtBefore(ReservationStatus.ACTIVE, Instant.now());
         for (var reservation : expiredReservations) {
-            var inventory = inventoryRepository.findLockedByTicketTypeId(reservation.getTicketTypeId())
-                    .orElseThrow(() -> new NotFoundException("Inventory not found for ticket type: " + reservation.getTicketTypeId()));
+            var inventory = inventoryRepository.findLockedByTicketCategoryId(reservation.getTicketCategoryId())
+                    .orElseThrow(() -> new NotFoundException("Inventory not found for ticket category: " + reservation.getTicketCategoryId()));
             inventory.release(reservation.getQuantity());
             inventoryRepository.save(inventory);
             reservation.markExpired();
@@ -121,7 +121,7 @@ public class InventoryService {
     }
 
     @Transactional
-    public void handleOrderPaidEvent(OrderPaidEventV1 event) {
+    public void handleOrderConfirmedEvent(OrderConfirmedEventV1 event) {
         confirm(event.reservationId());
     }
 
@@ -134,7 +134,7 @@ public class InventoryService {
         return new ReservationResponse(
                 reservation.getId(),
                 reservation.getUserId(),
-                reservation.getTicketTypeId(),
+                reservation.getTicketCategoryId(),
                 reservation.getQuantity(),
                 reservation.getStatus(),
                 reservation.getExpiresAt(),
@@ -145,7 +145,7 @@ public class InventoryService {
     private TicketInventoryResponse toResponse(TicketInventory inventory) {
         return new TicketInventoryResponse(
                 inventory.getId(),
-                inventory.getTicketTypeId(),
+                inventory.getTicketCategoryId(),
                 inventory.getTotalQuantity(),
                 inventory.getAvailableQuantity(),
                 inventory.getReservedQuantity(),
