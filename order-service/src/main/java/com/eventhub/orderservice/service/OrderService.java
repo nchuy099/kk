@@ -1,15 +1,17 @@
 package com.eventhub.orderservice.service;
 
-import com.eventhub.common.events.OrderPaidEvent;
-import com.eventhub.common.events.PaymentSucceededEvent;
+import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.PaymentSucceededEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.orderservice.client.EventServiceClient;
 import com.eventhub.orderservice.client.InventoryServiceClient;
 import com.eventhub.orderservice.client.PaymentServiceClient;
 import com.eventhub.orderservice.domain.Order;
 import com.eventhub.orderservice.domain.OrderItem;
+import com.eventhub.orderservice.domain.OrderOutboxEvent;
 import com.eventhub.orderservice.domain.OrderStatus;
 import com.eventhub.orderservice.repository.OrderRepository;
+import com.eventhub.orderservice.repository.OrderOutboxEventRepository;
 import com.eventhub.orderservice.service.exception.NotFoundException;
 import com.eventhub.orderservice.service.exception.OrderConflictException;
 import com.eventhub.orderservice.web.dto.CreateOrderRequest;
@@ -19,7 +21,9 @@ import com.eventhub.orderservice.web.dto.OrderResponse;
 import com.eventhub.orderservice.web.dto.ReserveOrderRequest;
 import java.math.BigDecimal;
 import java.util.UUID;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.tracing.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,28 +35,34 @@ public class OrderService {
     private final EventServiceClient eventServiceClient;
     private final InventoryServiceClient inventoryServiceClient;
     private final PaymentServiceClient paymentServiceClient;
-    private final RabbitTemplate rabbitTemplate;
+    private final OrderOutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
+    private final Tracer tracer;
 
     public OrderService(
             OrderRepository orderRepository,
             EventServiceClient eventServiceClient,
             InventoryServiceClient inventoryServiceClient,
             PaymentServiceClient paymentServiceClient,
-            RabbitTemplate rabbitTemplate
+            OrderOutboxEventRepository outboxEventRepository,
+            ObjectMapper objectMapper,
+            Tracer tracer
     ) {
         this.orderRepository = orderRepository;
         this.eventServiceClient = eventServiceClient;
         this.inventoryServiceClient = inventoryServiceClient;
         this.paymentServiceClient = paymentServiceClient;
-        this.rabbitTemplate = rabbitTemplate;
+        this.outboxEventRepository = outboxEventRepository;
+        this.objectMapper = objectMapper;
+        this.tracer = tracer;
     }
 
     @Transactional
-    public OrderResponse createOrder(CreateOrderRequest request) {
+    public OrderResponse createOrder(String userId, CreateOrderRequest request) {
         var orderId = UUID.randomUUID();
         var ticketType = eventServiceClient.getTicketType(request.ticketTypeId());
         var reservation = inventoryServiceClient.reserve(new ReserveOrderRequest(
-                request.userId(),
+                userId,
                 request.ticketTypeId(),
                 orderId,
                 request.quantity()
@@ -60,7 +70,7 @@ public class OrderService {
 
         var unitPrice = ticketType.price();
         var totalAmount = unitPrice.multiply(BigDecimal.valueOf(request.quantity()));
-        var order = Order.create(orderId, request.userId(), reservation.id(), totalAmount, reservation.expiresAt());
+        var order = Order.create(orderId, userId, reservation.id(), totalAmount, reservation.expiresAt());
         order.addItem(OrderItem.create(ticketType.id(), request.quantity(), unitPrice));
         order = orderRepository.save(order);
 
@@ -85,7 +95,7 @@ public class OrderService {
     }
 
     @Transactional
-    public void handlePaymentSucceeded(PaymentSucceededEvent event) {
+    public void handlePaymentSucceeded(PaymentSucceededEventV1 event) {
         var order = orderRepository.findById(event.orderId()).orElse(null);
         if (order == null || order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             return;
@@ -95,20 +105,7 @@ public class OrderService {
         orderRepository.save(order);
 
         var item = order.getItems().get(0);
-        rabbitTemplate.convertAndSend(
-                RabbitTopics.ORDER_EXCHANGE,
-                RabbitTopics.ORDER_PAID_ROUTING_KEY,
-                new OrderPaidEvent(
-                        order.getId(),
-                        order.getReservationId(),
-                        event.paymentId(),
-                        order.getUserId(),
-                        item.getTicketTypeId(),
-                        item.getQuantity(),
-                        order.getTotalAmount(),
-                        java.time.Instant.now()
-                )
-        );
+        createOrderPaidOutboxEvent(order, item, event.paymentId());
     }
 
     private Order findOrder(UUID id) {
@@ -143,5 +140,41 @@ public class OrderService {
                         item.getUnitPrice()
                 )).toList()
         );
+    }
+
+    private void createOrderPaidOutboxEvent(Order order, OrderItem item, UUID paymentId) {
+        var event = new OrderPaidEventV1(
+                UUID.randomUUID().toString(),
+                "OrderPaidEvent",
+                RabbitTopics.EVENT_VERSION_V1,
+                currentCorrelationId(),
+                java.time.Instant.now(),
+                order.getId(),
+                order.getReservationId(),
+                paymentId,
+                order.getUserId(),
+                item.getTicketTypeId(),
+                item.getQuantity(),
+                order.getTotalAmount()
+        );
+        try {
+            outboxEventRepository.save(OrderOutboxEvent.create(
+                    "Order",
+                    order.getId().toString(),
+                    event.eventType(),
+                    event.eventVersion(),
+                    objectMapper.writeValueAsString(event)
+            ));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to serialize order outbox event", exception);
+        }
+    }
+
+    private String currentCorrelationId() {
+        var span = tracer.currentSpan();
+        if (span != null && span.context() != null) {
+            return span.context().traceId();
+        }
+        return UUID.randomUUID().toString();
     }
 }

@@ -1,22 +1,26 @@
 package com.eventhub.paymentservice.service;
 
-import com.eventhub.common.events.PaymentSucceededEvent;
+import com.eventhub.common.events.v1.PaymentSucceededEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.paymentservice.domain.Payment;
+import com.eventhub.paymentservice.domain.PaymentOutboxEvent;
 import com.eventhub.paymentservice.domain.PaymentStatus;
 import com.eventhub.paymentservice.domain.PaymentWebhookEvent;
 import com.eventhub.paymentservice.repository.PaymentRepository;
+import com.eventhub.paymentservice.repository.PaymentOutboxEventRepository;
 import com.eventhub.paymentservice.repository.PaymentWebhookEventRepository;
 import com.eventhub.paymentservice.service.exception.NotFoundException;
 import com.eventhub.paymentservice.service.exception.PaymentConflictException;
 import com.eventhub.paymentservice.web.dto.CreatePaymentRequest;
 import com.eventhub.paymentservice.web.dto.PaymentResponse;
 import com.eventhub.paymentservice.web.dto.PaymentWebhookRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import io.micrometer.tracing.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +29,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentWebhookEventRepository webhookEventRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final PaymentOutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
+    private final Tracer tracer;
 
     public PaymentService(
             PaymentRepository paymentRepository,
             PaymentWebhookEventRepository webhookEventRepository,
-            RabbitTemplate rabbitTemplate
+            PaymentOutboxEventRepository outboxEventRepository,
+            ObjectMapper objectMapper,
+            Tracer tracer
     ) {
         this.paymentRepository = paymentRepository;
         this.webhookEventRepository = webhookEventRepository;
-        this.rabbitTemplate = rabbitTemplate;
+        this.outboxEventRepository = outboxEventRepository;
+        this.objectMapper = objectMapper;
+        this.tracer = tracer;
     }
 
     @Transactional
@@ -91,7 +101,7 @@ public class PaymentService {
             if (payment.getStatus() != PaymentStatus.SUCCESS) {
                 payment.markSuccess(request.transactionId());
                 payment = paymentRepository.save(payment);
-                publishPaymentSucceeded(payment);
+                createPaymentSucceededOutboxEvent(payment);
             }
             return toResponse(payment);
         }
@@ -103,18 +113,29 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    private void publishPaymentSucceeded(Payment payment) {
-        rabbitTemplate.convertAndSend(
-                RabbitTopics.PAYMENT_EXCHANGE,
-                RabbitTopics.PAYMENT_SUCCESS_ROUTING_KEY,
-                new PaymentSucceededEvent(
-                        payment.getId(),
-                        payment.getOrderId(),
-                        payment.getTransactionId(),
-                        payment.getAmount(),
-                        Instant.now()
-                )
+    private void createPaymentSucceededOutboxEvent(Payment payment) {
+        var event = new PaymentSucceededEventV1(
+                UUID.randomUUID().toString(),
+                "PaymentSucceededEvent",
+                RabbitTopics.EVENT_VERSION_V1,
+                currentCorrelationId(),
+                Instant.now(),
+                payment.getId(),
+                payment.getOrderId(),
+                payment.getTransactionId(),
+                payment.getAmount()
         );
+        try {
+            outboxEventRepository.save(PaymentOutboxEvent.create(
+                    "Payment",
+                    payment.getId().toString(),
+                    event.eventType(),
+                    event.eventVersion(),
+                    objectMapper.writeValueAsString(event)
+            ));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to serialize payment outbox event", exception);
+        }
     }
 
     private Payment findPayment(UUID paymentId) {
@@ -139,5 +160,13 @@ public class PaymentService {
 
     private static String requestToJson(PaymentWebhookRequest request) {
         return "{\"providerEventId\":\"" + request.providerEventId() + "\",\"transactionId\":\"" + request.transactionId() + "\",\"orderId\":\"" + request.orderId() + "\",\"status\":\"" + request.status() + "\",\"amount\":\"" + request.amount() + "\"}";
+    }
+
+    private String currentCorrelationId() {
+        var span = tracer.currentSpan();
+        if (span != null && span.context() != null) {
+            return span.context().traceId();
+        }
+        return UUID.randomUUID().toString();
     }
 }

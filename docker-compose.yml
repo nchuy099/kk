@@ -16,6 +16,51 @@ services:
       retries: 10
       start_period: 20s
 
+  zipkin:
+    image: openzipkin/zipkin:2.24.3
+    restart: unless-stopped
+    ports:
+      - "9411:9411"
+
+  keycloak-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    ports:
+      - "5437:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0.6
+    restart: unless-stopped
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL_HOST: keycloak-db
+      KC_DB_URL_PORT: 5432
+      KC_DB_URL_DATABASE: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HTTP_PORT: 8080
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./infra/keycloak/event-hub-realm.json:/opt/keycloak/data/import/event-hub-realm.json:ro
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    ports:
+      - "8088:8080"
+
   event-db:
     image: postgres:16
     restart: unless-stopped
@@ -96,6 +141,22 @@ services:
       retries: 10
       start_period: 20s
 
+  user-db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: user
+    ports:
+      - "5438:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d userdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   event-service:
     build:
       context: .
@@ -109,6 +170,7 @@ services:
       SPRING_DATASOURCE_USERNAME: event
       SPRING_DATASOURCE_PASSWORD: event
       SPRING_RABBITMQ_HOST: rabbitmq
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
       APP_INVENTORY_BASE_URL: http://inventory-service:8082
       APP_PAYMENT_BASE_URL: http://payment-service:8084
       APP_ORDER_BASE_URL: http://order-service:8083
@@ -133,6 +195,7 @@ services:
       SPRING_DATASOURCE_USERNAME: inventory
       SPRING_DATASOURCE_PASSWORD: inventory
       SPRING_RABBITMQ_HOST: rabbitmq
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
       APP_EVENT_BASE_URL: http://event-service:8081
     depends_on:
       inventory-db:
@@ -157,6 +220,7 @@ services:
       SPRING_DATASOURCE_USERNAME: order
       SPRING_DATASOURCE_PASSWORD: order
       SPRING_RABBITMQ_HOST: rabbitmq
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
       APP_EVENT_BASE_URL: http://event-service:8081
       APP_INVENTORY_BASE_URL: http://inventory-service:8082
       APP_PAYMENT_BASE_URL: http://payment-service:8084
@@ -187,6 +251,7 @@ services:
       SPRING_DATASOURCE_USERNAME: payment
       SPRING_DATASOURCE_PASSWORD: payment
       SPRING_RABBITMQ_HOST: rabbitmq
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       payment-db:
         condition: service_healthy
@@ -208,6 +273,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ticket
       SPRING_DATASOURCE_PASSWORD: ticket
       SPRING_RABBITMQ_HOST: rabbitmq
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       ticket-db:
         condition: service_healthy
@@ -228,6 +294,7 @@ services:
       SERVER_PORT: 8086
       SPRING_PROFILES_ACTIVE: docker
       SPRING_RABBITMQ_HOST: rabbitmq
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -235,6 +302,69 @@ services:
         condition: service_started
     ports:
       - "8086:8086"
+
+  user-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: user-service
+    environment:
+      SERVER_PORT: 8087
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/userdb
+      SPRING_DATASOURCE_USERNAME: user
+      SPRING_DATASOURCE_PASSWORD: user
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: event-hub
+      KEYCLOAK_ADMIN_CLIENT_ID: event-hub-user-service
+      KEYCLOAK_ADMIN_CLIENT_SECRET: user-service-secret
+    depends_on:
+      user-db:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    ports:
+      - "8087:8087"
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE_DIR: api-gateway
+    environment:
+      SERVER_PORT: 8080
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      APP_EVENT_BASE_URL: http://event-service:8081
+      APP_ORDER_BASE_URL: http://order-service:8083
+      APP_PAYMENT_BASE_URL: http://payment-service:8084
+      APP_USER_BASE_URL: http://user-service:8087
+      APP_TICKET_BASE_URL: http://ticket-service:8085
+      APP_GATEWAY_RATE_LIMIT: 120
+      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/event-hub
+    depends_on:
+      keycloak:
+        condition: service_started
+      event-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      ticket-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      zipkin:
+        condition: service_started
+    ports:
+      - "8080:8080"
 
   prometheus:
     image: prom/prometheus:v2.55.1
@@ -255,6 +385,8 @@ services:
       ticket-service:
         condition: service_started
       notification-service:
+        condition: service_started
+      user-service:
         condition: service_started
       rabbitmq:
         condition: service_healthy

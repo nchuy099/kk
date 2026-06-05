@@ -4,10 +4,13 @@ import com.eventhub.common.messaging.RabbitTopics;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class RabbitConfig {
@@ -23,8 +26,16 @@ public class RabbitConfig {
     }
 
     @Bean
+    TopicExchange ticketDeadLetterExchange() {
+        return new TopicExchange(RabbitTopics.TICKET_DLX, true, false);
+    }
+
+    @Bean
     Queue orderPaidQueue() {
-        return new Queue("ticket.order-paid", true);
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("x-dead-letter-exchange", RabbitTopics.TICKET_DLX);
+        arguments.put("x-dead-letter-routing-key", RabbitTopics.TICKET_ORDER_PAID_DLQ);
+        return new Queue(RabbitTopics.TICKET_ORDER_PAID_QUEUE, true, false, false, arguments);
     }
 
     @Bean
@@ -33,8 +44,17 @@ public class RabbitConfig {
     }
 
     @Bean
+    Queue orderPaidDlq() {
+        return QueueBuilder.durable(RabbitTopics.TICKET_ORDER_PAID_DLQ).build();
+    }
+
+    @Bean
+    Binding orderPaidDlqBinding(Queue orderPaidDlq, TopicExchange ticketDeadLetterExchange) {
+        return BindingBuilder.bind(orderPaidDlq).to(ticketDeadLetterExchange).with(RabbitTopics.TICKET_ORDER_PAID_DLQ);
+    }
+
+    @Bean
     Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 }
-

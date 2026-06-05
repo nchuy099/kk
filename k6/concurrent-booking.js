@@ -6,18 +6,30 @@ export const options = {
   duration: '30s',
 };
 
-export default function () {
+export function setup() {
+  const res = http.post('http://localhost:8088/realms/event-hub/protocol/openid-connect/token', {
+    client_id: 'event-hub-cli',
+    grant_type: 'password',
+    username: 'user',
+    password: 'user',
+  });
+  return { token: res.json('access_token') };
+}
+
+export default function (data) {
   const payload = JSON.stringify({
-    userId: `user-${__VU}-${__ITER}`,
     ticketTypeId: '11111111-1111-1111-1111-111111111111',
     quantity: 1,
   });
 
   const params = {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${data.token}`,
+      'Content-Type': 'application/json',
+    },
   };
 
-  const res = http.post('http://localhost:8083/orders', payload, params);
+  const res = http.post('http://localhost:8080/api/orders', payload, params);
   check(res, {
     'status is success or conflict': (r) => r.status === 200 || r.status === 201 || r.status === 409,
   });

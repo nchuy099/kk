@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,8 +23,8 @@ public class OrderController {
     }
 
     @PostMapping("/orders")
-    public OrderResponse create(@Valid @RequestBody CreateOrderRequest request) {
-        return orderService.createOrder(request);
+    public OrderResponse create(@RequestHeader("X-User-Id") String userId, @Valid @RequestBody CreateOrderRequest request) {
+        return orderService.createOrder(userId, request);
     }
 
     @GetMapping("/orders/{id}")
@@ -36,4 +37,3 @@ public class OrderController {
         return orderService.cancel(id);
     }
 }
-

@@ -1,6 +1,7 @@
 package com.eventhub.orderservice.service;
 
-import com.eventhub.common.events.PaymentSucceededEvent;
+import com.eventhub.common.events.v1.PaymentSucceededEventV1;
+import com.eventhub.common.messaging.RabbitTopics;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -12,9 +13,8 @@ public class PaymentSucceededListener {
         this.orderService = orderService;
     }
 
-    @RabbitListener(queues = "order.payment-succeeded")
-    public void onPaymentSucceeded(PaymentSucceededEvent event) {
+    @RabbitListener(queues = RabbitTopics.ORDER_PAYMENT_SUCCEEDED_QUEUE)
+    public void onPaymentSucceeded(PaymentSucceededEventV1 event) {
         orderService.handlePaymentSucceeded(event);
     }
 }
-

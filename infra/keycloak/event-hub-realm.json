@@ -1,0 +1,92 @@
+{
+  "realm": "event-hub",
+  "enabled": true,
+  "displayName": "Event Hub",
+  "sslRequired": "external",
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Standard user role"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administrative role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "event-hub-cli",
+      "name": "Event Hub CLI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": false
+    },
+    {
+      "clientId": "event-hub-user-service",
+      "name": "Event Hub User Service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "user-service-secret",
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": true,
+      "frontchannelLogout": false
+    }
+  ],
+  "users": [
+    {
+      "username": "user",
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "USER"
+      ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    },
+    {
+      "username": "service-account-event-hub-user-service",
+      "enabled": true,
+      "serviceAccountClientId": "event-hub-user-service",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users"
+        ]
+      }
+    }
+  ]
+}

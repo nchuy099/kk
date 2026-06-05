@@ -1,12 +1,13 @@
 rootProject.name = 'event-hub'
 
 include(
+        'api-gateway',
         'common',
         'event-service',
         'inventory-service',
         'order-service',
         'payment-service',
+        'user-service',
         'ticket-service',
         'notification-service'
 )
-

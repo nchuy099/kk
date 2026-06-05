@@ -12,15 +12,25 @@ function randomUuid() {
 }
 
 export function setup() {
+  const tokenRes = http.post('http://localhost:8088/realms/event-hub/protocol/openid-connect/token', {
+    client_id: 'event-hub-cli',
+    grant_type: 'password',
+    username: 'user',
+    password: 'user',
+  });
+  const token = tokenRes.json('access_token');
   const orderId = randomUuid();
   const createPaymentPayload = JSON.stringify({
     orderId,
     amount: 500000,
   });
-  const createPaymentRes = http.post('http://localhost:8084/payments', createPaymentPayload, {
-    headers: { 'Content-Type': 'application/json' },
+  const createPaymentRes = http.post('http://localhost:8080/api/payments', createPaymentPayload, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
   });
-  return { paymentId: createPaymentRes.json('paymentId'), orderId };
+  return { paymentId: createPaymentRes.json('paymentId'), orderId, token };
 }
 
 export default function (data) {
@@ -33,9 +43,12 @@ export default function (data) {
   });
 
   const params = {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      Authorization: `Bearer ${data.token}`,
+      'Content-Type': 'application/json',
+    },
   };
 
-  const res = http.post('http://localhost:8084/payments/webhook', payload, params);
+  const res = http.post('http://localhost:8080/api/payments/webhook', payload, params);
   check(res, { 'status 200': (r) => r.status === 200 });
 }

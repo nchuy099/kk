@@ -8,12 +8,16 @@ Event Booking Microservices Platform built as an MVP demo.
 - `inventory-service`
 - `order-service`
 - `payment-service`
+- `user-service`
 - `ticket-service`
 - `notification-service`
+- `api-gateway`
 - PostgreSQL per service
 - RabbitMQ
 - Prometheus
 - Grafana
+- Zipkin
+- Keycloak
 - k6 scripts for load and concurrency tests
 
 ## Current scope
@@ -22,7 +26,12 @@ Event Booking Microservices Platform built as an MVP demo.
 - Reservation-based booking
 - Oversell prevention with database locking
 - Mock payment webhook with idempotency
+- User profile management backed by Keycloak identity
 - Async ticket issuing through RabbitMQ
+- API Gateway with Keycloak JWT validation, rate limiting, and request logging
+- Distributed tracing with Zipkin
+- RabbitMQ dead-letter queues for failed consumers
+- Outbox-based event publishing for payment, order, and ticket workflows
 - Notification logging
 - Event API includes `availableQuantity` for each ticket type
 
@@ -36,9 +45,9 @@ docker compose up --build
 
 ## Demo flow
 
-1. Query events from `event-service`.
-2. Create an order through `order-service`.
-3. Trigger a mock payment webhook.
+1. Query events through the `api-gateway`.
+2. Create an order through the `api-gateway`.
+3. Trigger a mock payment webhook through the `api-gateway`.
 4. Observe `order-service` marking the order paid.
 5. Observe `ticket-service` issuing tickets.
 6. Run k6 booking and webhook spike tests.
@@ -53,11 +62,13 @@ The services seed the same fixed IDs so the demo flow stays reproducible:
 
 ## Sample request
 
+Use a token from the Gateway Auth section below.
+
 ```bash
-curl -X POST http://localhost:8083/orders \
+curl -X POST http://localhost:8080/api/orders \
+  -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{
-    "userId": "user-1",
     "ticketTypeId": "11111111-1111-1111-1111-111111111111",
     "quantity": 2
   }'
@@ -71,9 +82,85 @@ curl -X POST http://localhost:8083/orders \
 - `payment-service`: `8084`
 - `ticket-service`: `8085`
 - `notification-service`: `8086`
+- `user-service`: `8087`
+- `api-gateway`: `8080`
 - RabbitMQ UI: `15672`
+- Keycloak: `8088`
+- Zipkin: `9411`
 - Prometheus: `9090`
 - Grafana: `3000`
+
+## Gateway Auth
+
+The gateway validates Keycloak tokens.
+
+Keycloak admin console: `http://localhost:8088`
+
+Login: `admin / admin`
+
+Demo token for `user`:
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8088/realms/event-hub/protocol/openid-connect/token \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'client_id=event-hub-cli' \
+  -d 'grant_type=password' \
+  -d 'username=user' \
+  -d 'password=user' | jq -r .access_token)
+
+curl -X POST http://localhost:8080/api/orders \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "ticketTypeId": "11111111-1111-1111-1111-111111111111",
+    "quantity": 2
+  }'
+```
+
+User profile from the authenticated Keycloak token:
+
+```bash
+curl http://localhost:8080/api/users/me \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Admin token for admin routes:
+
+```bash
+ADMIN_TOKEN=$(curl -s -X POST http://localhost:8088/realms/event-hub/protocol/openid-connect/token \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'client_id=event-hub-cli' \
+  -d 'grant_type=password' \
+  -d 'username=admin' \
+  -d 'password=admin' | jq -r .access_token)
+
+curl -X POST http://localhost:8080/api/admin/events \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "New Event",
+    "description": "Created via Keycloak admin token",
+    "startTime": "2026-06-10T09:00:00Z",
+    "saleStartTime": "2026-06-05T09:00:00Z",
+    "saleEndTime": "2026-06-09T09:00:00Z",
+    "venue": "Main Hall"
+  }'
+```
+
+Create a user through `user-service` and Keycloak Admin API:
+
+```bash
+curl -X POST http://localhost:8080/api/admin/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "username": "new-user",
+    "email": "new-user@example.com",
+    "password": "password",
+    "fullName": "New User",
+    "phone": "0900000000"
+  }'
+```
 
 ## Grafana
 
@@ -165,10 +252,8 @@ k6 run k6/webhook-spike.js
 ### Notes
 
 - Run `docker compose up -d` before k6.
-- The scripts call services on localhost:
-  - event browsing: `http://localhost:8081`
-  - booking: `http://localhost:8083`
-  - payments: `http://localhost:8084`
+- The scripts call the gateway on `http://localhost:8080`.
+- Protected k6 scenarios request a token from Keycloak on `http://localhost:8088`.
 - For a performance report, record:
   - p95 latency
   - error rate

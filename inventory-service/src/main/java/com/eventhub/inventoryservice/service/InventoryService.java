@@ -1,6 +1,6 @@
 package com.eventhub.inventoryservice.service;
 
-import com.eventhub.common.events.OrderPaidEvent;
+import com.eventhub.common.events.v1.OrderPaidEventV1;
 import com.eventhub.inventoryservice.domain.Reservation;
 import com.eventhub.inventoryservice.domain.ReservationStatus;
 import com.eventhub.inventoryservice.domain.TicketInventory;
@@ -121,7 +121,7 @@ public class InventoryService {
     }
 
     @Transactional
-    public void handleOrderPaidEvent(OrderPaidEvent event) {
+    public void handleOrderPaidEvent(OrderPaidEventV1 event) {
         confirm(event.reservationId());
     }
 

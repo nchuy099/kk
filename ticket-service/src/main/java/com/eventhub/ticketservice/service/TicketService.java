@@ -1,43 +1,53 @@
 package com.eventhub.ticketservice.service;
 
-import com.eventhub.common.events.OrderPaidEvent;
-import com.eventhub.common.events.TicketIssuedEvent;
+import com.eventhub.common.events.v1.OrderPaidEventV1;
+import com.eventhub.common.events.v1.TicketIssuedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.ticketservice.domain.Ticket;
 import com.eventhub.ticketservice.domain.TicketIssuance;
+import com.eventhub.ticketservice.domain.TicketOutboxEvent;
 import com.eventhub.ticketservice.domain.TicketStatus;
 import com.eventhub.ticketservice.repository.TicketRepository;
 import com.eventhub.ticketservice.repository.TicketIssuanceRepository;
+import com.eventhub.ticketservice.repository.TicketOutboxEventRepository;
 import com.eventhub.ticketservice.service.exception.NotFoundException;
 import com.eventhub.ticketservice.service.exception.TicketConflictException;
 import com.eventhub.ticketservice.web.dto.TicketResponse;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import io.micrometer.tracing.Tracer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
 public class TicketService {
     private final TicketRepository ticketRepository;
     private final TicketIssuanceRepository ticketIssuanceRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final TicketOutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
+    private final Tracer tracer;
 
     public TicketService(
             TicketRepository ticketRepository,
             TicketIssuanceRepository ticketIssuanceRepository,
-            RabbitTemplate rabbitTemplate
+            TicketOutboxEventRepository outboxEventRepository,
+            ObjectMapper objectMapper,
+            Tracer tracer
     ) {
         this.ticketRepository = ticketRepository;
         this.ticketIssuanceRepository = ticketIssuanceRepository;
-        this.rabbitTemplate = rabbitTemplate;
+        this.outboxEventRepository = outboxEventRepository;
+        this.objectMapper = objectMapper;
+        this.tracer = tracer;
     }
 
     @Transactional
-    public void issueTickets(OrderPaidEvent event) {
+    public void issueTickets(OrderPaidEventV1 event) {
         if (ticketIssuanceRepository.existsByOrderId(event.orderId())) {
             return;
         }
@@ -55,11 +65,7 @@ public class TicketService {
             ticketRepository.save(Ticket.create(event.orderId(), event.userId(), event.ticketTypeId(), ticketCode));
         }
 
-        rabbitTemplate.convertAndSend(
-                RabbitTopics.TICKET_EXCHANGE,
-                RabbitTopics.TICKET_ISSUED_ROUTING_KEY,
-                new TicketIssuedEvent(event.orderId(), event.userId(), issuedCodes, java.time.Instant.now())
-        );
+        createTicketIssuedOutboxEvent(event, issuedCodes);
     }
 
     public List<TicketResponse> getTicketsForUser(String userId) {
@@ -84,7 +90,7 @@ public class TicketService {
     }
 
     @Transactional
-    public void handleOrderPaid(OrderPaidEvent event) {
+    public void handleOrderPaid(OrderPaidEventV1 event) {
         issueTickets(event);
     }
 
@@ -109,5 +115,37 @@ public class TicketService {
     private static String buildTicketCode(UUID orderId, int index) {
         var compactOrderId = orderId.toString().substring(0, 8).toUpperCase();
         return "EVT-" + compactOrderId + "-" + index + "-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+    }
+
+    private void createTicketIssuedOutboxEvent(OrderPaidEventV1 orderPaidEvent, List<String> issuedCodes) {
+        var event = new TicketIssuedEventV1(
+                UUID.randomUUID().toString(),
+                "TicketIssuedEvent",
+                RabbitTopics.EVENT_VERSION_V1,
+                currentCorrelationId(),
+                java.time.Instant.now(),
+                orderPaidEvent.orderId(),
+                orderPaidEvent.userId(),
+                issuedCodes
+        );
+        try {
+            outboxEventRepository.save(TicketOutboxEvent.create(
+                    "Ticket",
+                    orderPaidEvent.orderId().toString(),
+                    event.eventType(),
+                    event.eventVersion(),
+                    objectMapper.writeValueAsString(event)
+            ));
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Failed to serialize ticket outbox event", exception);
+        }
+    }
+
+    private String currentCorrelationId() {
+        var span = tracer.currentSpan();
+        if (span != null && span.context() != null) {
+            return span.context().traceId();
+        }
+        return UUID.randomUUID().toString();
     }
 }
