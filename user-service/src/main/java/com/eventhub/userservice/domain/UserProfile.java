@@ -7,9 +7,14 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserProfile {
     @Id
     private String id;
@@ -35,9 +40,6 @@ public class UserProfile {
 
     @Column(nullable = false)
     private Instant updatedAt;
-
-    protected UserProfile() {
-    }
 
     public static UserProfile create(String id, String username, String email, String fullName) {
         var user = new UserProfile();
@@ -68,35 +70,4 @@ public class UserProfile {
         this.updatedAt = Instant.now();
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public UserStatus getStatus() {
-        return status;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
 }

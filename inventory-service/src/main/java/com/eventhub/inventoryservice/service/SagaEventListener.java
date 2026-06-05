@@ -6,16 +6,14 @@ import com.eventhub.common.events.v1.OrderCreatedEventV1;
 import com.eventhub.common.events.v1.OrderExpiredEventV1;
 import com.eventhub.common.events.v1.OrderRefundedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class SagaEventListener {
     private final InventoryService inventoryService;
-
-    public SagaEventListener(InventoryService inventoryService) {
-        this.inventoryService = inventoryService;
-    }
 
     @RabbitListener(queues = RabbitTopics.INVENTORY_ORDER_CREATED_QUEUE)
     public void onOrderCreated(OrderCreatedEventV1 event) {

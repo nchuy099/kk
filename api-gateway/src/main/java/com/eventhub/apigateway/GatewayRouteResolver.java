@@ -2,15 +2,13 @@ package com.eventhub.apigateway;
 
 import java.net.URI;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class GatewayRouteResolver {
     private final GatewayProperties properties;
-
-    public GatewayRouteResolver(GatewayProperties properties) {
-        this.properties = properties;
-    }
 
     public URI resolve(HttpServletRequest request) {
         var path = request.getRequestURI();

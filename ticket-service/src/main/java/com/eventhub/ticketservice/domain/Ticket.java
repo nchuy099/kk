@@ -8,9 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "tickets")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Ticket {
     @Id
     private UUID id;
@@ -37,9 +42,6 @@ public class Ticket {
     @Column(nullable = false)
     private Instant issuedAt;
 
-    protected Ticket() {
-    }
-
     public static Ticket create(UUID orderId, String userId, UUID ticketCategoryId, String ticketCode) {
         var ticket = new Ticket();
         ticket.id = UUID.randomUUID();
@@ -51,38 +53,6 @@ public class Ticket {
         ticket.status = TicketStatus.ISSUED;
         ticket.issuedAt = Instant.now();
         return ticket;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getOrderId() {
-        return orderId;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public UUID getTicketCategoryId() {
-        return ticketCategoryId;
-    }
-
-    public String getTicketCode() {
-        return ticketCode;
-    }
-
-    public String getQrCodePayload() {
-        return qrCodePayload;
-    }
-
-    public TicketStatus getStatus() {
-        return status;
-    }
-
-    public Instant getIssuedAt() {
-        return issuedAt;
     }
 
     public void markUsed() {

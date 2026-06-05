@@ -6,20 +6,17 @@ import com.eventhub.userservice.web.dto.CreateUserRequest;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@RequiredArgsConstructor
 public class KeycloakAdminClient {
     private final RestClient restClient;
     private final KeycloakAdminProperties properties;
-
-    public KeycloakAdminClient(RestClient keycloakRestClient, KeycloakAdminProperties properties) {
-        this.restClient = keycloakRestClient;
-        this.properties = properties;
-    }
 
     public String createUser(CreateUserRequest request) {
         var token = accessToken();

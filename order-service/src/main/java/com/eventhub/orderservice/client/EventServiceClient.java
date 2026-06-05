@@ -5,17 +5,15 @@ import com.eventhub.orderservice.web.dto.TicketTypeSnapshot;
 import java.util.UUID;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestClient;
 
+@RequiredArgsConstructor
 public class EventServiceClient {
     private final RestClient restClient;
-
-    public EventServiceClient(RestClient restClient) {
-        this.restClient = restClient;
-    }
 
     @Retry(name = "eventService")
     @CircuitBreaker(name = "eventService", fallbackMethod = "getTicketTypeFallback")

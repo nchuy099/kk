@@ -6,9 +6,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "processed_events")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProcessedEvent {
     @Id
     private UUID id;
@@ -24,9 +27,6 @@ public class ProcessedEvent {
 
     @Column(nullable = false)
     private Instant processedAt;
-
-    protected ProcessedEvent() {
-    }
 
     public static ProcessedEvent create(String eventId, String consumerName) {
         var processedEvent = new ProcessedEvent();

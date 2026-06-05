@@ -8,9 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "competitions")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Competition {
     @Id
     private UUID id;
@@ -32,9 +37,6 @@ public class Competition {
     @Column(nullable = false)
     private CompetitionStatus status;
 
-    protected Competition() {
-    }
-
     public static Competition create(UUID id, String name, SportType sportType, Instant startDate, Instant endDate, CompetitionStatus status) {
         var competition = new Competition();
         competition.id = id;
@@ -46,27 +48,4 @@ public class Competition {
         return competition;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public SportType getSportType() {
-        return sportType;
-    }
-
-    public Instant getStartDate() {
-        return startDate;
-    }
-
-    public Instant getEndDate() {
-        return endDate;
-    }
-
-    public CompetitionStatus getStatus() {
-        return status;
-    }
 }

@@ -12,9 +12,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "orders")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
     @Id
     private UUID id;
@@ -56,9 +61,6 @@ public class Order {
     @OneToMany(mappedBy = "order", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
     private List<OrderItem> items = new ArrayList<>();
 
-    protected Order() {
-    }
-
     public static Order create(UUID id, String userId, UUID eventId, UUID reservationId, BigDecimal totalAmount, String currency, Instant expiresAt) {
         var order = new Order();
         order.id = id;
@@ -74,25 +76,9 @@ public class Order {
         return order;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public UUID getReservationId() {
-        return reservationId;
-    }
-
     public void setReservationId(UUID reservationId) {
         this.reservationId = reservationId;
         this.updatedAt = Instant.now();
-    }
-
-    public UUID getPaymentId() {
-        return paymentId;
     }
 
     public void setPaymentId(UUID paymentId) {
@@ -100,50 +86,14 @@ public class Order {
         this.updatedAt = Instant.now();
     }
 
-    public BigDecimal getTotalAmount() {
-        return totalAmount;
-    }
-
-    public UUID getEventId() {
-        return eventId;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
     public void setStatus(OrderStatus status) {
         this.status = status;
         this.updatedAt = Instant.now();
     }
 
-    public String getFailureReason() {
-        return failureReason;
-    }
-
     public void setFailureReason(String failureReason) {
         this.failureReason = failureReason;
         this.updatedAt = Instant.now();
-    }
-
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public List<OrderItem> getItems() {
-        return items;
     }
 
     public void addItem(OrderItem item) {

@@ -6,9 +6,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "ticket_inventory")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TicketInventory {
     @Id
     private UUID id;
@@ -31,9 +36,6 @@ public class TicketInventory {
     @Version
     private long version;
 
-    protected TicketInventory() {
-    }
-
     public static TicketInventory create(UUID ticketCategoryId, int totalQuantity) {
         var inventory = new TicketInventory();
         inventory.id = UUID.randomUUID();
@@ -43,34 +45,6 @@ public class TicketInventory {
         inventory.reservedQuantity = 0;
         inventory.soldQuantity = 0;
         return inventory;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getTicketCategoryId() {
-        return ticketCategoryId;
-    }
-
-    public int getTotalQuantity() {
-        return totalQuantity;
-    }
-
-    public int getAvailableQuantity() {
-        return availableQuantity;
-    }
-
-    public int getReservedQuantity() {
-        return reservedQuantity;
-    }
-
-    public int getSoldQuantity() {
-        return soldQuantity;
-    }
-
-    public long getVersion() {
-        return version;
     }
 
     public void reserve(int quantity) {

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
@@ -16,14 +17,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
+@RequiredArgsConstructor
 public class GatewayRateLimitFilter extends OncePerRequestFilter {
     private final GatewayProperties properties;
     private final Clock clock = Clock.systemUTC();
     private final Map<String, Window> windows = new ConcurrentHashMap<>();
-
-    public GatewayRateLimitFilter(GatewayProperties properties) {
-        this.properties = properties;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {

@@ -5,15 +5,13 @@ import com.eventhub.common.events.v1.OrderCompletedEventV1;
 import com.eventhub.common.events.v1.OrderCompensationFailedEventV1;
 import com.eventhub.common.events.v1.OrderRefundedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class SagaNotificationListener {
-    private static final Logger log = LoggerFactory.getLogger(SagaNotificationListener.class);
-
     @RabbitListener(queues = RabbitTopics.NOTIFICATION_ORDER_COMPLETED_QUEUE)
     public void onOrderCompleted(OrderCompletedEventV1 event) {
         log.info("Sending completed booking notification for order {}", event.orderId());

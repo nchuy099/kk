@@ -11,9 +11,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "ticket_categories")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TicketType {
     @Id
     private UUID id;
@@ -41,9 +46,6 @@ public class TicketType {
     @Column(nullable = false)
     private TicketTypeStatus status;
 
-    protected TicketType() {
-    }
-
     public static TicketType create(
             UUID id,
             Event event,
@@ -66,64 +68,32 @@ public class TicketType {
         return ticketType;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public Event getEvent() {
-        return event;
     }
 
     public void setEvent(Event event) {
         this.event = event;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getSectionName() {
-        return sectionName;
     }
 
     public void setSectionName(String sectionName) {
         this.sectionName = sectionName;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
     public void setPrice(BigDecimal price) {
         this.price = price;
-    }
-
-    public String getCurrency() {
-        return currency;
     }
 
     public void setCurrency(String currency) {
         this.currency = currency;
     }
 
-    public int getTotalQuantity() {
-        return totalQuantity;
-    }
-
     public void setTotalQuantity(int totalQuantity) {
         this.totalQuantity = totalQuantity;
-    }
-
-    public TicketTypeStatus getStatus() {
-        return status;
     }
 
     public void setStatus(TicketTypeStatus status) {

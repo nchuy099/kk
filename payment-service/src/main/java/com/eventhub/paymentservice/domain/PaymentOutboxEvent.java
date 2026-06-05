@@ -8,9 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "payment_outbox_events")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PaymentOutboxEvent {
     @Id
     private UUID id;
@@ -43,9 +48,6 @@ public class PaymentOutboxEvent {
     @Column
     private Instant sentAt;
 
-    protected PaymentOutboxEvent() {
-    }
-
     public static PaymentOutboxEvent create(String aggregateType, String aggregateId, String eventType, String eventVersion, String payload) {
         var event = new PaymentOutboxEvent();
         event.id = UUID.randomUUID();
@@ -58,46 +60,6 @@ public class PaymentOutboxEvent {
         event.attempts = 0;
         event.createdAt = Instant.now();
         return event;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getAggregateType() {
-        return aggregateType;
-    }
-
-    public String getAggregateId() {
-        return aggregateId;
-    }
-
-    public String getEventType() {
-        return eventType;
-    }
-
-    public String getEventVersion() {
-        return eventVersion;
-    }
-
-    public String getPayload() {
-        return payload;
-    }
-
-    public PaymentOutboxEventStatus getStatus() {
-        return status;
-    }
-
-    public int getAttempts() {
-        return attempts;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public Instant getSentAt() {
-        return sentAt;
     }
 
     public void markSent() {

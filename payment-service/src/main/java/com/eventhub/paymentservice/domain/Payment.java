@@ -9,9 +9,14 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "payments")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment {
     @Id
     private UUID id;
@@ -41,9 +46,6 @@ public class Payment {
     @Column(nullable = false)
     private Instant createdAt;
 
-    protected Payment() {
-    }
-
     public static Payment create(UUID orderId, BigDecimal amount, String currency) {
         var payment = new Payment();
         payment.id = UUID.randomUUID();
@@ -55,42 +57,6 @@ public class Payment {
         payment.transactionId = "txn-" + UUID.randomUUID();
         payment.createdAt = Instant.now();
         return payment;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getOrderId() {
-        return orderId;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public PaymentStatus getStatus() {
-        return status;
-    }
-
-    public String getTransactionId() {
-        return transactionId;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public String getRefundTransactionId() {
-        return refundTransactionId;
     }
 
     public void markSuccess(String transactionId) {

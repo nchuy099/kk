@@ -9,9 +9,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "order_items")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrderItem {
     @Id
     private UUID id;
@@ -29,9 +34,6 @@ public class OrderItem {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal unitPrice;
 
-    protected OrderItem() {
-    }
-
     public static OrderItem create(UUID ticketCategoryId, int quantity, BigDecimal unitPrice) {
         var item = new OrderItem();
         item.id = UUID.randomUUID();
@@ -41,27 +43,7 @@ public class OrderItem {
         return item;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public Order getOrder() {
-        return order;
-    }
-
     public void setOrder(Order order) {
         this.order = order;
-    }
-
-    public UUID getTicketCategoryId() {
-        return ticketCategoryId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getUnitPrice() {
-        return unitPrice;
     }
 }

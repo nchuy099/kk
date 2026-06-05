@@ -4,16 +4,14 @@ import com.eventhub.common.events.v1.OrderCancelledEventV1;
 import com.eventhub.common.events.v1.OrderRefundedEventV1;
 import com.eventhub.common.events.v1.TicketIssueRequestedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class SagaEventListener {
     private final TicketService ticketService;
-
-    public SagaEventListener(TicketService ticketService) {
-        this.ticketService = ticketService;
-    }
 
     @RabbitListener(queues = RabbitTopics.TICKET_TICKET_ISSUE_REQUESTED_QUEUE)
     public void onTicketIssueRequested(TicketIssueRequestedEventV1 event) {

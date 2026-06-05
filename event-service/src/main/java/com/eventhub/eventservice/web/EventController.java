@@ -11,6 +11,7 @@ import com.eventhub.eventservice.web.dto.StadiumResponse;
 import com.eventhub.eventservice.web.dto.TicketTypeResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -24,12 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping
+@RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
-
-    public EventController(EventService eventService) {
-        this.eventService = eventService;
-    }
 
     @GetMapping("/competitions")
     public Page<CompetitionResponse> listCompetitions(Pageable pageable) {

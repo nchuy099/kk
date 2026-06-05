@@ -28,12 +28,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.tracing.Tracer;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentWebhookEventRepository webhookEventRepository;
@@ -41,22 +43,6 @@ public class PaymentService {
     private final ProcessedEventRepository processedEventRepository;
     private final ObjectMapper objectMapper;
     private final Tracer tracer;
-
-    public PaymentService(
-            PaymentRepository paymentRepository,
-            PaymentWebhookEventRepository webhookEventRepository,
-            PaymentOutboxEventRepository outboxEventRepository,
-            ProcessedEventRepository processedEventRepository,
-            ObjectMapper objectMapper,
-            Tracer tracer
-    ) {
-        this.paymentRepository = paymentRepository;
-        this.webhookEventRepository = webhookEventRepository;
-        this.outboxEventRepository = outboxEventRepository;
-        this.processedEventRepository = processedEventRepository;
-        this.objectMapper = objectMapper;
-        this.tracer = tracer;
-    }
 
     @Transactional
     public PaymentResponse createPayment(CreatePaymentRequest request) {

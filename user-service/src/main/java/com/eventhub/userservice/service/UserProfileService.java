@@ -8,19 +8,16 @@ import com.eventhub.userservice.web.dto.CreateUserRequest;
 import com.eventhub.userservice.web.dto.UpdateProfileRequest;
 import com.eventhub.userservice.web.dto.UserProfileResponse;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class UserProfileService {
     private final UserProfileRepository repository;
     private final KeycloakAdminClient keycloakAdminClient;
-
-    public UserProfileService(UserProfileRepository repository, KeycloakAdminClient keycloakAdminClient) {
-        this.repository = repository;
-        this.keycloakAdminClient = keycloakAdminClient;
-    }
 
     @Transactional
     public UserProfileResponse me(AuthUser authUser) {

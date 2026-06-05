@@ -42,16 +42,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.tracing.Tracer;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class OrderService {
     private static final String SERVICE_NAME = "order-service";
 
@@ -62,34 +65,20 @@ public class OrderService {
     private final SagaAuditEventRepository sagaAuditEventRepository;
     private final ObjectMapper objectMapper;
     private final Tracer tracer;
-    private final Counter sagaStartedCounter;
-    private final Counter sagaCompletedCounter;
-    private final Counter sagaCancelledCounter;
-    private final Counter sagaCompensatedCounter;
-    private final Counter sagaFailedCounter;
+    private final MeterRegistry meterRegistry;
+    private Counter sagaStartedCounter;
+    private Counter sagaCompletedCounter;
+    private Counter sagaCancelledCounter;
+    private Counter sagaCompensatedCounter;
+    private Counter sagaFailedCounter;
 
-    public OrderService(
-            OrderRepository orderRepository,
-            EventServiceClient eventServiceClient,
-            OrderOutboxEventRepository outboxEventRepository,
-            ProcessedEventRepository processedEventRepository,
-            SagaAuditEventRepository sagaAuditEventRepository,
-            ObjectMapper objectMapper,
-            Tracer tracer,
-            MeterRegistry meterRegistry
-    ) {
-        this.orderRepository = orderRepository;
-        this.eventServiceClient = eventServiceClient;
-        this.outboxEventRepository = outboxEventRepository;
-        this.processedEventRepository = processedEventRepository;
-        this.sagaAuditEventRepository = sagaAuditEventRepository;
-        this.objectMapper = objectMapper;
-        this.tracer = tracer;
-        this.sagaStartedCounter = meterRegistry.counter("saga_started_total");
-        this.sagaCompletedCounter = meterRegistry.counter("saga_completed_total");
-        this.sagaCancelledCounter = meterRegistry.counter("saga_cancelled_total");
-        this.sagaCompensatedCounter = meterRegistry.counter("saga_compensated_total");
-        this.sagaFailedCounter = meterRegistry.counter("saga_failed_total");
+    @PostConstruct
+    void initCounters() {
+        sagaStartedCounter = meterRegistry.counter("saga_started_total");
+        sagaCompletedCounter = meterRegistry.counter("saga_completed_total");
+        sagaCancelledCounter = meterRegistry.counter("saga_cancelled_total");
+        sagaCompensatedCounter = meterRegistry.counter("saga_compensated_total");
+        sagaFailedCounter = meterRegistry.counter("saga_failed_total");
     }
 
     @Transactional

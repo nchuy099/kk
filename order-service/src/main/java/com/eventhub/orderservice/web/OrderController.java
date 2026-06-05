@@ -5,6 +5,7 @@ import com.eventhub.orderservice.web.dto.CreateOrderRequest;
 import com.eventhub.orderservice.web.dto.OrderResponse;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,12 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping
+@RequiredArgsConstructor
 public class OrderController {
     private final OrderService orderService;
-
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
 
     @PostMapping("/orders")
     public OrderResponse create(@RequestHeader("X-User-Id") String userId, @Valid @RequestBody CreateOrderRequest request) {

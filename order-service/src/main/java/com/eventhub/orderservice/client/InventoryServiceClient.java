@@ -3,16 +3,14 @@ package com.eventhub.orderservice.client;
 import com.eventhub.orderservice.web.dto.ReservationSnapshot;
 import com.eventhub.orderservice.web.dto.ReserveOrderRequest;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+@RequiredArgsConstructor
 public class InventoryServiceClient {
     private final RestClient restClient;
-
-    public InventoryServiceClient(RestClient restClient) {
-        this.restClient = restClient;
-    }
 
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "reserveFallback")
     public ReservationSnapshot reserve(ReserveOrderRequest request) {

@@ -8,9 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "reservations")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reservation {
     @Id
     private UUID id;
@@ -40,9 +45,6 @@ public class Reservation {
     @Column
     private Instant updatedAt;
 
-    protected Reservation() {
-    }
-
     public static Reservation create(String userId, UUID ticketCategoryId, int quantity, UUID orderId, Instant expiresAt) {
         var reservation = new Reservation();
         reservation.id = UUID.randomUUID();
@@ -55,38 +57,6 @@ public class Reservation {
         reservation.createdAt = Instant.now();
         reservation.updatedAt = reservation.createdAt;
         return reservation;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public UUID getTicketCategoryId() {
-        return ticketCategoryId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public ReservationStatus getStatus() {
-        return status;
-    }
-
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
-
-    public UUID getOrderId() {
-        return orderId;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
     }
 
     public void markConfirmed() {
@@ -106,9 +76,5 @@ public class Reservation {
 
     public boolean isActive() {
         return status == ReservationStatus.RESERVED;
-    }
-
-    public Instant getUpdatedAt() {
-        return updatedAt;
     }
 }

@@ -15,9 +15,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "events")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Event {
     @Id
     private UUID id;
@@ -58,9 +63,6 @@ public class Event {
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<TicketType> ticketTypes = new ArrayList<>();
 
-    protected Event() {
-    }
-
     public static Event create(
             UUID id,
             String name,
@@ -89,96 +91,48 @@ public class Event {
         return event;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Competition getCompetition() {
-        return competition;
     }
 
     public void setCompetition(Competition competition) {
         this.competition = competition;
     }
 
-    public Stadium getStadium() {
-        return stadium;
-    }
-
     public void setStadium(Stadium stadium) {
         this.stadium = stadium;
-    }
-
-    public String getHomeTeam() {
-        return homeTeam;
     }
 
     public void setHomeTeam(String homeTeam) {
         this.homeTeam = homeTeam;
     }
 
-    public String getAwayTeam() {
-        return awayTeam;
-    }
-
     public void setAwayTeam(String awayTeam) {
         this.awayTeam = awayTeam;
-    }
-
-    public Instant getStartTime() {
-        return startTime;
     }
 
     public void setStartTime(Instant startTime) {
         this.startTime = startTime;
     }
 
-    public Instant getSaleStartTime() {
-        return saleStartTime;
-    }
-
     public void setSaleStartTime(Instant saleStartTime) {
         this.saleStartTime = saleStartTime;
-    }
-
-    public Instant getSaleEndTime() {
-        return saleEndTime;
     }
 
     public void setSaleEndTime(Instant saleEndTime) {
         this.saleEndTime = saleEndTime;
     }
 
-    public EventStatus getStatus() {
-        return status;
-    }
-
     public void setStatus(EventStatus status) {
         this.status = status;
-    }
-
-    public List<TicketType> getTicketTypes() {
-        return ticketTypes;
     }
 
     public void setTicketTypes(List<TicketType> ticketTypes) {

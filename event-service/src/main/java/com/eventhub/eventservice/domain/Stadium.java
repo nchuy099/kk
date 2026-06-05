@@ -5,9 +5,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "stadiums")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Stadium {
     @Id
     private UUID id;
@@ -27,9 +32,6 @@ public class Stadium {
     @Column(nullable = false)
     private String address;
 
-    protected Stadium() {
-    }
-
     public static Stadium create(UUID id, String name, String city, String country, int capacity, String address) {
         var stadium = new Stadium();
         stadium.id = id;
@@ -41,27 +43,4 @@ public class Stadium {
         return stadium;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
-
-    public String getAddress() {
-        return address;
-    }
 }

@@ -5,17 +5,15 @@ import com.eventhub.eventservice.web.dto.TicketInventorySnapshot;
 import java.util.UUID;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+@RequiredArgsConstructor
 public class InventoryServiceClient {
     private final RestClient restClient;
-
-    public InventoryServiceClient(RestClient restClient) {
-        this.restClient = restClient;
-    }
 
     @Retry(name = "inventoryService")
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "getInventoryFallback")

@@ -4,16 +4,14 @@ import com.eventhub.orderservice.web.dto.CreatePaymentRequest;
 import com.eventhub.orderservice.web.dto.PaymentSnapshot;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.client.RestClient;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+@RequiredArgsConstructor
 public class PaymentServiceClient {
     private final RestClient restClient;
-
-    public PaymentServiceClient(RestClient restClient) {
-        this.restClient = restClient;
-    }
 
     @Retry(name = "paymentService")
     @CircuitBreaker(name = "paymentService", fallbackMethod = "createPaymentFallback")

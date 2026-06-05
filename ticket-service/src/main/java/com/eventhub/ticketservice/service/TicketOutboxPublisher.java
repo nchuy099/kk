@@ -7,26 +7,18 @@ import com.eventhub.ticketservice.domain.TicketOutboxEventStatus;
 import com.eventhub.ticketservice.repository.TicketOutboxEventRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@RequiredArgsConstructor
 public class TicketOutboxPublisher {
     private final TicketOutboxEventRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-
-    public TicketOutboxPublisher(
-            TicketOutboxEventRepository outboxRepository,
-            RabbitTemplate rabbitTemplate,
-            ObjectMapper objectMapper
-    ) {
-        this.outboxRepository = outboxRepository;
-        this.rabbitTemplate = rabbitTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     @Scheduled(fixedDelayString = "${app.outbox.publish-interval-ms:5000}")
     @Transactional

@@ -26,26 +26,18 @@ import com.eventhub.orderservice.domain.OrderOutboxEventStatus;
 import com.eventhub.orderservice.repository.OrderOutboxEventRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@RequiredArgsConstructor
 public class OrderOutboxPublisher {
     private final OrderOutboxEventRepository outboxRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
-
-    public OrderOutboxPublisher(
-            OrderOutboxEventRepository outboxRepository,
-            RabbitTemplate rabbitTemplate,
-            ObjectMapper objectMapper
-    ) {
-        this.outboxRepository = outboxRepository;
-        this.rabbitTemplate = rabbitTemplate;
-        this.objectMapper = objectMapper;
-    }
 
     @Scheduled(fixedDelayString = "${app.outbox.publish-interval-ms:5000}")
     @Transactional

@@ -11,16 +11,14 @@ import com.eventhub.common.events.v1.ReservationExpiredEventV1;
 import com.eventhub.common.events.v1.TicketIssueFailedEventV1;
 import com.eventhub.common.events.v1.TicketIssuedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class SagaEventListener {
     private final OrderService orderService;
-
-    public SagaEventListener(OrderService orderService) {
-        this.orderService = orderService;
-    }
 
     @RabbitListener(queues = RabbitTopics.ORDER_INVENTORY_RESERVED_QUEUE)
     public void onInventoryReserved(InventoryReservedEventV1 event) {

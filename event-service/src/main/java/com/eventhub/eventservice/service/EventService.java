@@ -23,6 +23,7 @@ import com.eventhub.eventservice.web.dto.StadiumResponse;
 import com.eventhub.eventservice.web.dto.EventResponse;
 import com.eventhub.eventservice.web.dto.TicketTypeResponse;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -31,26 +32,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
 public class EventService {
     private final CompetitionRepository competitionRepository;
     private final StadiumRepository stadiumRepository;
     private final EventRepository eventRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final InventoryServiceClient inventoryServiceClient;
-
-    public EventService(
-            CompetitionRepository competitionRepository,
-            StadiumRepository stadiumRepository,
-            EventRepository eventRepository,
-            TicketTypeRepository ticketTypeRepository,
-            InventoryServiceClient inventoryServiceClient
-    ) {
-        this.competitionRepository = competitionRepository;
-        this.stadiumRepository = stadiumRepository;
-        this.eventRepository = eventRepository;
-        this.ticketTypeRepository = ticketTypeRepository;
-        this.inventoryServiceClient = inventoryServiceClient;
-    }
 
     public Page<CompetitionResponse> listCompetitions(Pageable pageable) {
         return competitionRepository.findAll(pageable).map(this::toResponse);

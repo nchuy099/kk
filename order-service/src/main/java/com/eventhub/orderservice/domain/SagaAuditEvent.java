@@ -6,9 +6,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "saga_audit_events")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SagaAuditEvent {
     @Id
     private UUID id;
@@ -33,9 +36,6 @@ public class SagaAuditEvent {
 
     @Column(nullable = false)
     private Instant createdAt;
-
-    protected SagaAuditEvent() {
-    }
 
     public static SagaAuditEvent create(UUID sagaId, UUID orderId, String eventType, String serviceName, String status, String reason) {
         var event = new SagaAuditEvent();

@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Set;
 import io.micrometer.tracing.Tracer;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,6 +22,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class GatewayProxyService {
     private static final Set<String> HOP_BY_HOP_HEADERS = Set.of(
             "connection",
@@ -50,12 +52,6 @@ public class GatewayProxyService {
     private final GatewayRouteResolver routeResolver;
     private final HttpClient httpClient;
     private final Tracer tracer;
-
-    public GatewayProxyService(GatewayRouteResolver routeResolver, HttpClient httpClient, Tracer tracer) {
-        this.routeResolver = routeResolver;
-        this.httpClient = httpClient;
-        this.tracer = tracer;
-    }
 
     public void proxy(HttpServletRequest request, HttpServletResponse response) throws IOException, InterruptedException {
         var target = routeResolver.resolve(request);

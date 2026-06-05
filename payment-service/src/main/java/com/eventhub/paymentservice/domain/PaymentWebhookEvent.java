@@ -6,9 +6,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "payment_webhook_events")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PaymentWebhookEvent {
     @Id
     private UUID id;
@@ -28,9 +31,6 @@ public class PaymentWebhookEvent {
     @Column(nullable = false)
     private Instant processedAt;
 
-    protected PaymentWebhookEvent() {
-    }
-
     public static PaymentWebhookEvent create(String providerEventId, String transactionId, String status, String payload) {
         var event = new PaymentWebhookEvent();
         event.id = UUID.randomUUID();
@@ -42,4 +42,3 @@ public class PaymentWebhookEvent {
         return event;
     }
 }
-

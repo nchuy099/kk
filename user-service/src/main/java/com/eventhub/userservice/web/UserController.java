@@ -7,6 +7,7 @@ import com.eventhub.userservice.web.dto.UpdateProfileRequest;
 import com.eventhub.userservice.web.dto.UserProfileResponse;
 import jakarta.validation.Valid;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -20,12 +21,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping
+@RequiredArgsConstructor
 public class UserController {
     private final UserProfileService userProfileService;
-
-    public UserController(UserProfileService userProfileService) {
-        this.userProfileService = userProfileService;
-    }
 
     @GetMapping("/users/me")
     public UserProfileResponse me(@RequestHeader("X-User-Id") String userId,

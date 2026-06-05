@@ -6,9 +6,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "ticket_issuances")
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class TicketIssuance {
     @Id
     private UUID id;
@@ -19,9 +22,6 @@ public class TicketIssuance {
     @Column(nullable = false)
     private Instant createdAt;
 
-    protected TicketIssuance() {
-    }
-
     public static TicketIssuance create(UUID orderId) {
         var issuance = new TicketIssuance();
         issuance.id = UUID.randomUUID();
@@ -30,4 +30,3 @@ public class TicketIssuance {
         return issuance;
     }
 }
-
