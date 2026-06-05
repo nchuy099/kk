@@ -88,4 +88,8 @@ public class Ticket {
     public void markUsed() {
         this.status = TicketStatus.CHECKED_IN;
     }
+
+    public void cancel() {
+        this.status = TicketStatus.CANCELLED;
+    }
 }

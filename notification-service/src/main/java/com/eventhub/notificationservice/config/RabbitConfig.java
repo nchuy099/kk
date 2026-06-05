@@ -16,40 +16,104 @@ import java.util.Map;
 public class RabbitConfig {
 
     @Bean
-    TopicExchange ticketExchange() {
-        return new TopicExchange(RabbitTopics.TICKET_EXCHANGE, true, false);
+    TopicExchange sagaExchange() {
+        return new TopicExchange(RabbitTopics.SAGA_EXCHANGE, true, false);
     }
 
     @Bean
-    TopicExchange notificationDeadLetterExchange() {
-        return new TopicExchange(RabbitTopics.NOTIFICATION_DLX, true, false);
+    TopicExchange sagaDeadLetterExchange() {
+        return new TopicExchange(RabbitTopics.SAGA_DLX, true, false);
     }
 
     @Bean
-    Queue ticketIssuedQueue() {
-        Map<String, Object> arguments = new HashMap<>();
-        arguments.put("x-dead-letter-exchange", RabbitTopics.NOTIFICATION_DLX);
-        arguments.put("x-dead-letter-routing-key", RabbitTopics.NOTIFICATION_TICKET_ISSUED_DLQ);
-        return new Queue(RabbitTopics.NOTIFICATION_TICKET_ISSUED_QUEUE, true, false, false, arguments);
+    Queue orderCompletedQueue() {
+        return queue(RabbitTopics.NOTIFICATION_ORDER_COMPLETED_QUEUE, RabbitTopics.NOTIFICATION_ORDER_COMPLETED_DLQ);
     }
 
     @Bean
-    Binding ticketIssuedBinding(Queue ticketIssuedQueue, TopicExchange ticketExchange) {
-        return BindingBuilder.bind(ticketIssuedQueue).to(ticketExchange).with(RabbitTopics.TICKET_ISSUED_ROUTING_KEY);
+    Binding orderCompletedBinding(Queue orderCompletedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(orderCompletedQueue).to(sagaExchange).with(RabbitTopics.ORDER_COMPLETED_ROUTING_KEY);
     }
 
     @Bean
-    Queue ticketIssuedDlq() {
-        return QueueBuilder.durable(RabbitTopics.NOTIFICATION_TICKET_ISSUED_DLQ).build();
+    Queue orderCancelledQueue() {
+        return queue(RabbitTopics.NOTIFICATION_ORDER_CANCELLED_QUEUE, RabbitTopics.NOTIFICATION_ORDER_CANCELLED_DLQ);
     }
 
     @Bean
-    Binding ticketIssuedDlqBinding(Queue ticketIssuedDlq, TopicExchange notificationDeadLetterExchange) {
-        return BindingBuilder.bind(ticketIssuedDlq).to(notificationDeadLetterExchange).with(RabbitTopics.NOTIFICATION_TICKET_ISSUED_DLQ);
+    Binding orderCancelledBinding(Queue orderCancelledQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(orderCancelledQueue).to(sagaExchange).with(RabbitTopics.ORDER_CANCELLED_ROUTING_KEY);
+    }
+
+    @Bean
+    Queue orderRefundedQueue() {
+        return queue(RabbitTopics.NOTIFICATION_ORDER_REFUNDED_QUEUE, RabbitTopics.NOTIFICATION_ORDER_REFUNDED_DLQ);
+    }
+
+    @Bean
+    Binding orderRefundedBinding(Queue orderRefundedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(orderRefundedQueue).to(sagaExchange).with(RabbitTopics.ORDER_REFUNDED_ROUTING_KEY);
+    }
+
+    @Bean
+    Queue orderCompensationFailedQueue() {
+        return queue(RabbitTopics.NOTIFICATION_ORDER_COMPENSATION_FAILED_QUEUE, RabbitTopics.NOTIFICATION_ORDER_COMPENSATION_FAILED_DLQ);
+    }
+
+    @Bean
+    Binding orderCompensationFailedBinding(Queue orderCompensationFailedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(orderCompensationFailedQueue).to(sagaExchange).with(RabbitTopics.ORDER_COMPENSATION_FAILED_ROUTING_KEY);
+    }
+
+    @Bean
+    Queue orderCompletedDlq() {
+        return QueueBuilder.durable(RabbitTopics.NOTIFICATION_ORDER_COMPLETED_DLQ).build();
+    }
+
+    @Bean
+    Binding orderCompletedDlqBinding(Queue orderCompletedDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(orderCompletedDlq).to(sagaDeadLetterExchange).with(RabbitTopics.NOTIFICATION_ORDER_COMPLETED_DLQ);
+    }
+
+    @Bean
+    Queue orderCancelledDlq() {
+        return QueueBuilder.durable(RabbitTopics.NOTIFICATION_ORDER_CANCELLED_DLQ).build();
+    }
+
+    @Bean
+    Binding orderCancelledDlqBinding(Queue orderCancelledDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(orderCancelledDlq).to(sagaDeadLetterExchange).with(RabbitTopics.NOTIFICATION_ORDER_CANCELLED_DLQ);
+    }
+
+    @Bean
+    Queue orderRefundedDlq() {
+        return QueueBuilder.durable(RabbitTopics.NOTIFICATION_ORDER_REFUNDED_DLQ).build();
+    }
+
+    @Bean
+    Binding orderRefundedDlqBinding(Queue orderRefundedDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(orderRefundedDlq).to(sagaDeadLetterExchange).with(RabbitTopics.NOTIFICATION_ORDER_REFUNDED_DLQ);
+    }
+
+    @Bean
+    Queue orderCompensationFailedDlq() {
+        return QueueBuilder.durable(RabbitTopics.NOTIFICATION_ORDER_COMPENSATION_FAILED_DLQ).build();
+    }
+
+    @Bean
+    Binding orderCompensationFailedDlqBinding(Queue orderCompensationFailedDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(orderCompensationFailedDlq).to(sagaDeadLetterExchange).with(RabbitTopics.NOTIFICATION_ORDER_COMPENSATION_FAILED_DLQ);
     }
 
     @Bean
     Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
+    }
+
+    private Queue queue(String name, String dlqRoutingKey) {
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("x-dead-letter-exchange", RabbitTopics.SAGA_DLX);
+        arguments.put("x-dead-letter-routing-key", dlqRoutingKey);
+        return new Queue(name, true, false, false, arguments);
     }
 }

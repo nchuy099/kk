@@ -32,6 +32,11 @@ public class PaymentController {
         return paymentService.get(paymentId);
     }
 
+    @GetMapping("/payments/by-order/{orderId}")
+    public PaymentResponse getByOrderId(@PathVariable UUID orderId) {
+        return paymentService.getByOrderId(orderId);
+    }
+
     @PostMapping("/payments/{paymentId}/mock-success")
     public PaymentResponse mockSuccess(@PathVariable UUID paymentId) {
         return paymentService.mockSuccess(paymentId);
@@ -42,4 +47,3 @@ public class PaymentController {
         return paymentService.handleWebhook(request);
     }
 }
-

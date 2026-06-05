@@ -87,4 +87,9 @@ public class TicketInventory {
         reservedQuantity -= quantity;
         availableQuantity += quantity;
     }
+
+    public void refund(int quantity) {
+        soldQuantity -= quantity;
+        availableQuantity += quantity;
+    }
 }

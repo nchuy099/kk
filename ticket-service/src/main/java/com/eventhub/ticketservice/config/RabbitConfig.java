@@ -16,45 +16,84 @@ import java.util.Map;
 public class RabbitConfig {
 
     @Bean
-    TopicExchange orderExchange() {
-        return new TopicExchange(RabbitTopics.ORDER_EXCHANGE, true, false);
+    TopicExchange sagaExchange() {
+        return new TopicExchange(RabbitTopics.SAGA_EXCHANGE, true, false);
     }
 
     @Bean
-    TopicExchange ticketExchange() {
-        return new TopicExchange(RabbitTopics.TICKET_EXCHANGE, true, false);
+    TopicExchange sagaDeadLetterExchange() {
+        return new TopicExchange(RabbitTopics.SAGA_DLX, true, false);
     }
 
     @Bean
-    TopicExchange ticketDeadLetterExchange() {
-        return new TopicExchange(RabbitTopics.TICKET_DLX, true, false);
+    Queue ticketIssueRequestedQueue() {
+        return queue(RabbitTopics.TICKET_TICKET_ISSUE_REQUESTED_QUEUE, RabbitTopics.TICKET_TICKET_ISSUE_REQUESTED_DLQ);
     }
 
     @Bean
-    Queue orderConfirmedQueue() {
-        Map<String, Object> arguments = new HashMap<>();
-        arguments.put("x-dead-letter-exchange", RabbitTopics.TICKET_DLX);
-        arguments.put("x-dead-letter-routing-key", RabbitTopics.TICKET_ORDER_CONFIRMED_DLQ);
-        return new Queue(RabbitTopics.TICKET_ORDER_CONFIRMED_QUEUE, true, false, false, arguments);
+    Binding ticketIssueRequestedBinding(Queue ticketIssueRequestedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(ticketIssueRequestedQueue).to(sagaExchange).with(RabbitTopics.TICKET_ISSUE_REQUESTED_ROUTING_KEY);
     }
 
     @Bean
-    Binding orderConfirmedBinding(Queue orderConfirmedQueue, TopicExchange orderExchange) {
-        return BindingBuilder.bind(orderConfirmedQueue).to(orderExchange).with(RabbitTopics.ORDER_CONFIRMED_ROUTING_KEY);
+    Queue orderRefundedQueue() {
+        return queue(RabbitTopics.TICKET_ORDER_REFUNDED_QUEUE, RabbitTopics.TICKET_ORDER_REFUNDED_DLQ);
     }
 
     @Bean
-    Queue orderConfirmedDlq() {
-        return QueueBuilder.durable(RabbitTopics.TICKET_ORDER_CONFIRMED_DLQ).build();
+    Binding orderRefundedBinding(Queue orderRefundedQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(orderRefundedQueue).to(sagaExchange).with(RabbitTopics.ORDER_REFUNDED_ROUTING_KEY);
     }
 
     @Bean
-    Binding orderConfirmedDlqBinding(Queue orderConfirmedDlq, TopicExchange ticketDeadLetterExchange) {
-        return BindingBuilder.bind(orderConfirmedDlq).to(ticketDeadLetterExchange).with(RabbitTopics.TICKET_ORDER_CONFIRMED_DLQ);
+    Queue orderCancelledQueue() {
+        return queue(RabbitTopics.TICKET_ORDER_CANCELLED_QUEUE, RabbitTopics.TICKET_ORDER_CANCELLED_DLQ);
+    }
+
+    @Bean
+    Binding orderCancelledBinding(Queue orderCancelledQueue, TopicExchange sagaExchange) {
+        return BindingBuilder.bind(orderCancelledQueue).to(sagaExchange).with(RabbitTopics.ORDER_CANCELLED_ROUTING_KEY);
+    }
+
+    @Bean
+    Queue ticketIssueRequestedDlq() {
+        return QueueBuilder.durable(RabbitTopics.TICKET_TICKET_ISSUE_REQUESTED_DLQ).build();
+    }
+
+    @Bean
+    Binding ticketIssueRequestedDlqBinding(Queue ticketIssueRequestedDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(ticketIssueRequestedDlq).to(sagaDeadLetterExchange).with(RabbitTopics.TICKET_TICKET_ISSUE_REQUESTED_DLQ);
+    }
+
+    @Bean
+    Queue orderRefundedDlq() {
+        return QueueBuilder.durable(RabbitTopics.TICKET_ORDER_REFUNDED_DLQ).build();
+    }
+
+    @Bean
+    Binding orderRefundedDlqBinding(Queue orderRefundedDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(orderRefundedDlq).to(sagaDeadLetterExchange).with(RabbitTopics.TICKET_ORDER_REFUNDED_DLQ);
+    }
+
+    @Bean
+    Queue orderCancelledDlq() {
+        return QueueBuilder.durable(RabbitTopics.TICKET_ORDER_CANCELLED_DLQ).build();
+    }
+
+    @Bean
+    Binding orderCancelledDlqBinding(Queue orderCancelledDlq, TopicExchange sagaDeadLetterExchange) {
+        return BindingBuilder.bind(orderCancelledDlq).to(sagaDeadLetterExchange).with(RabbitTopics.TICKET_ORDER_CANCELLED_DLQ);
     }
 
     @Bean
     Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
         return new Jackson2JsonMessageConverter();
+    }
+
+    private Queue queue(String name, String dlqRoutingKey) {
+        Map<String, Object> arguments = new HashMap<>();
+        arguments.put("x-dead-letter-exchange", RabbitTopics.SAGA_DLX);
+        arguments.put("x-dead-letter-routing-key", dlqRoutingKey);
+        return new Queue(name, true, false, false, arguments);
     }
 }

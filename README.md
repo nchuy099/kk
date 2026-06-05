@@ -1,6 +1,6 @@
 # Sports Event Ticketing Microservices Platform
 
-A microservices-based sports event ticketing platform that simulates an authorized ticket distributor for tournaments and stadium matches. Fans can browse competitions, select events, reserve official tickets, complete payment, and receive QR tickets.
+A choreography-based Saga sports ticketing platform that simulates an authorized distributor for official tournament tickets. Fans browse competitions, create orders, trigger payment, and receive QR tickets through asynchronous service coordination.
 
 ## Services
 
@@ -15,25 +15,32 @@ A microservices-based sports event ticketing platform that simulates an authoriz
 
 ## Current Scope
 
-- Competition and event browsing
-- Stadium and ticket category management
-- Temporary ticket reservation with expiration
-- Oversell prevention with pessimistic locking
-- Mock payment webhook with idempotency
-- Async QR ticket issuing through RabbitMQ
-- API Gateway with Keycloak JWT validation, rate limiting, and request logging
+- Competition, stadium, event, and ticket category browsing
+- Event-first order creation with `OrderCreatedEvent`
+- Inventory reservation and oversell prevention with pessimistic locking
+- Async payment creation and idempotent webhook processing
+- Choreography Saga across order, inventory, payment, ticket, and notification services
+- Refund compensation after ticket issue failure
+- DLQ-enabled RabbitMQ consumers and outbox-based publishers
 - Prometheus, Grafana, and Zipkin observability
 
-## Demo Flow
+## Saga Flow
 
-1. Fan queries competitions and events through `api-gateway`.
-2. Fan selects an event and ticket category.
-3. Fan creates an order and inventory is reserved temporarily.
-4. Payment service receives a mock success webhook.
-5. Order becomes `CONFIRMED`.
-6. Inventory moves reserved tickets to sold.
-7. Ticket service issues QR tickets.
-8. Notification service logs ticket delivery.
+1. `POST /api/orders` creates an order in `PENDING` and publishes `OrderCreatedEvent`.
+2. `inventory-service` reserves ticket quota and publishes `InventoryReservedEvent` or `InventoryReserveFailedEvent`.
+3. `order-service` reacts to `InventoryReservedEvent` and publishes `PaymentRequestedEvent`.
+4. `payment-service` creates a local payment and publishes `PaymentCreatedEvent`.
+5. Payment webhook publishes `PaymentSucceededEvent` or `PaymentFailedEvent`.
+6. `order-service` publishes `OrderConfirmedEvent` and `TicketIssueRequestedEvent`.
+7. `inventory-service` confirms the reservation, and `ticket-service` issues QR tickets.
+8. `ticket-service` publishes `TicketIssuedEvent`, then `order-service` publishes `OrderCompletedEvent`.
+9. `notification-service` reacts to final order events.
+
+Compensation path:
+
+- Inventory reserve fail -> `OrderCancelledEvent`
+- Payment fail or timeout -> `OrderCancelledEvent` or `OrderExpiredEvent` -> inventory release
+- Ticket issue fail after payment success -> `PaymentRefundRequestedEvent` -> `PaymentRefundedEvent` -> `OrderRefundedEvent`
 
 ## Demo IDs
 
@@ -71,7 +78,7 @@ curl http://localhost:8080/api/competitions
 Create an order:
 
 ```bash
-curl -X POST http://localhost:8080/api/orders \
+ORDER_ID=$(curl -s -X POST http://localhost:8080/api/orders \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{
@@ -82,7 +89,14 @@ curl -X POST http://localhost:8080/api/orders \
         "quantity": 2
       }
     ]
-  }'
+  }' | jq -r .id)
+```
+
+Poll until payment exists:
+
+```bash
+curl http://localhost:8080/api/payments/by-order/$ORDER_ID \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 Mock a payment webhook:
@@ -91,19 +105,19 @@ Mock a payment webhook:
 curl -X POST http://localhost:8080/api/payments/webhook \
   -H "Authorization: Bearer $TOKEN" \
   -H 'Content-Type: application/json' \
-  -d '{
-    "providerEventId": "evt-order-001",
-    "transactionId": "txn-order-001",
-    "orderId": "REPLACE_WITH_ORDER_ID",
-    "status": "SUCCEEDED",
-    "amount": 1000000
-  }'
+  -d "{
+    \"providerEventId\": \"evt-$ORDER_ID\",
+    \"transactionId\": \"txn-$ORDER_ID\",
+    \"orderId\": \"$ORDER_ID\",
+    \"status\": \"SUCCEEDED\",
+    \"amount\": 1000000
+  }"
 ```
 
 Get order tickets:
 
 ```bash
-curl http://localhost:8080/api/orders/REPLACE_WITH_ORDER_ID/tickets \
+curl http://localhost:8080/api/orders/$ORDER_ID/tickets \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -127,4 +141,4 @@ curl http://localhost:8080/api/orders/REPLACE_WITH_ORDER_ID/tickets \
 
 - `k6/event-browsing.js`: competition/event/category browsing load
 - `k6/concurrent-booking.js`: concurrent order creation on one ticket category
-- `k6/webhook-spike.js`: duplicate payment webhook handling
+- `k6/webhook-spike.js`: duplicate payment webhook handling after async payment creation

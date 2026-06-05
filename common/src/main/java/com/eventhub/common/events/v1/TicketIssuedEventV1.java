@@ -8,9 +8,12 @@ public record TicketIssuedEventV1(
         String eventId,
         String eventType,
         String eventVersion,
-        String correlationId,
-        Instant occurredAt,
+        UUID sagaId,
         UUID orderId,
+        String correlationId,
+        String causationId,
+        Instant occurredAt,
+        String reason,
         String userId,
         List<String> ticketCodes
 ) {

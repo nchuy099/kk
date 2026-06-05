@@ -37,6 +37,9 @@ public class Reservation {
     @Column(nullable = false)
     private Instant createdAt;
 
+    @Column
+    private Instant updatedAt;
+
     protected Reservation() {
     }
 
@@ -46,10 +49,11 @@ public class Reservation {
         reservation.userId = userId;
         reservation.ticketCategoryId = ticketCategoryId;
         reservation.quantity = quantity;
-        reservation.status = ReservationStatus.ACTIVE;
+        reservation.status = ReservationStatus.RESERVED;
         reservation.orderId = orderId;
         reservation.expiresAt = expiresAt;
         reservation.createdAt = Instant.now();
+        reservation.updatedAt = reservation.createdAt;
         return reservation;
     }
 
@@ -87,17 +91,24 @@ public class Reservation {
 
     public void markConfirmed() {
         status = ReservationStatus.CONFIRMED;
+        updatedAt = Instant.now();
     }
 
-    public void markCancelled() {
-        status = ReservationStatus.CANCELLED;
+    public void markReleased() {
+        status = ReservationStatus.RELEASED;
+        updatedAt = Instant.now();
     }
 
     public void markExpired() {
         status = ReservationStatus.EXPIRED;
+        updatedAt = Instant.now();
     }
 
     public boolean isActive() {
-        return status == ReservationStatus.ACTIVE;
+        return status == ReservationStatus.RESERVED;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 }

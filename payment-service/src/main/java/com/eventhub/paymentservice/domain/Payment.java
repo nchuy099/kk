@@ -35,6 +35,9 @@ public class Payment {
     @Column(nullable = false, unique = true)
     private String transactionId;
 
+    @Column
+    private String refundTransactionId;
+
     @Column(nullable = false)
     private Instant createdAt;
 
@@ -86,6 +89,10 @@ public class Payment {
         return createdAt;
     }
 
+    public String getRefundTransactionId() {
+        return refundTransactionId;
+    }
+
     public void markSuccess(String transactionId) {
         this.status = PaymentStatus.SUCCEEDED;
         this.transactionId = transactionId;
@@ -94,5 +101,23 @@ public class Payment {
     public void markFailed(String transactionId) {
         this.status = PaymentStatus.FAILED;
         this.transactionId = transactionId;
+    }
+
+    public void markCancelled() {
+        this.status = PaymentStatus.CANCELLED;
+    }
+
+    public void markRefundPending() {
+        this.status = PaymentStatus.REFUND_PENDING;
+    }
+
+    public void markRefunded(String refundTransactionId) {
+        this.status = PaymentStatus.REFUNDED;
+        this.refundTransactionId = refundTransactionId;
+    }
+
+    public void markRefundFailed(String refundTransactionId) {
+        this.status = PaymentStatus.REFUND_FAILED;
+        this.refundTransactionId = refundTransactionId;
     }
 }

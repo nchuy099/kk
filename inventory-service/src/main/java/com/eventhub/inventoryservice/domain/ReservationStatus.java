@@ -1,8 +1,8 @@
 package com.eventhub.inventoryservice.domain;
 
 public enum ReservationStatus {
-    ACTIVE,
+    RESERVED,
     CONFIRMED,
-    CANCELLED,
+    RELEASED,
     EXPIRED
 }

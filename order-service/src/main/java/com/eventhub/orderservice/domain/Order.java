@@ -22,7 +22,7 @@ public class Order {
     @Column(nullable = false)
     private String userId;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private UUID reservationId;
 
     @Column
@@ -50,6 +50,9 @@ public class Order {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    @Column
+    private String failureReason;
+
     @OneToMany(mappedBy = "order", orphanRemoval = true, cascade = jakarta.persistence.CascadeType.ALL)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -64,7 +67,7 @@ public class Order {
         order.reservationId = reservationId;
         order.totalAmount = totalAmount;
         order.currency = currency;
-        order.status = OrderStatus.PENDING_PAYMENT;
+        order.status = OrderStatus.PENDING;
         order.expiresAt = expiresAt;
         order.createdAt = Instant.now();
         order.updatedAt = Instant.now();
@@ -83,12 +86,18 @@ public class Order {
         return reservationId;
     }
 
+    public void setReservationId(UUID reservationId) {
+        this.reservationId = reservationId;
+        this.updatedAt = Instant.now();
+    }
+
     public UUID getPaymentId() {
         return paymentId;
     }
 
     public void setPaymentId(UUID paymentId) {
         this.paymentId = paymentId;
+        this.updatedAt = Instant.now();
     }
 
     public BigDecimal getTotalAmount() {
@@ -109,6 +118,15 @@ public class Order {
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+        this.updatedAt = Instant.now();
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public void setFailureReason(String failureReason) {
+        this.failureReason = failureReason;
         this.updatedAt = Instant.now();
     }
 

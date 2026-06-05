@@ -36,6 +36,6 @@ export default function (data) {
 
   const res = http.post('http://localhost:8080/api/orders', payload, params);
   check(res, {
-    'status is success or conflict': (r) => r.status === 200 || r.status === 201 || r.status === 409,
+    'status is accepted': (r) => r.status === 200 || r.status === 201,
   });
 }

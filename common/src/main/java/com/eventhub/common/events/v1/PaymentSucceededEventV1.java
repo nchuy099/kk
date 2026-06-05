@@ -8,11 +8,15 @@ public record PaymentSucceededEventV1(
         String eventId,
         String eventType,
         String eventVersion,
-        String correlationId,
-        Instant occurredAt,
-        UUID paymentId,
+        UUID sagaId,
         UUID orderId,
+        String correlationId,
+        String causationId,
+        Instant occurredAt,
+        String reason,
+        UUID paymentId,
         String transactionId,
-        BigDecimal amount
+        BigDecimal amount,
+        String currency
 ) {
 }

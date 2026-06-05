@@ -1,5 +1,9 @@
 package com.eventhub.paymentservice.service;
 
+import com.eventhub.common.events.v1.PaymentCreatedEventV1;
+import com.eventhub.common.events.v1.PaymentFailedEventV1;
+import com.eventhub.common.events.v1.PaymentRefundFailedEventV1;
+import com.eventhub.common.events.v1.PaymentRefundedEventV1;
 import com.eventhub.common.events.v1.PaymentSucceededEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.paymentservice.domain.PaymentOutboxEventStatus;
@@ -33,14 +37,44 @@ public class PaymentOutboxPublisher {
         var pending = outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(PaymentOutboxEventStatus.PENDING);
         for (var event : pending) {
             try {
-                var payload = objectMapper.readValue(event.getPayload(), PaymentSucceededEventV1.class);
-                rabbitTemplate.convertAndSend(RabbitTopics.PAYMENT_EXCHANGE, RabbitTopics.PAYMENT_SUCCESS_ROUTING_KEY, payload);
+                publish(event.getEventType(), event.getPayload());
                 event.markSent();
             } catch (IOException exception) {
                 event.markFailed();
             } catch (RuntimeException exception) {
                 event.markFailed();
             }
+        }
+    }
+
+    private void publish(String eventType, String payload) throws IOException {
+        switch (eventType) {
+            case "PaymentCreatedEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.PAYMENT_CREATED_ROUTING_KEY,
+                    objectMapper.readValue(payload, PaymentCreatedEventV1.class)
+            );
+            case "PaymentSucceededEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.PAYMENT_SUCCEEDED_ROUTING_KEY,
+                    objectMapper.readValue(payload, PaymentSucceededEventV1.class)
+            );
+            case "PaymentFailedEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.PAYMENT_FAILED_ROUTING_KEY,
+                    objectMapper.readValue(payload, PaymentFailedEventV1.class)
+            );
+            case "PaymentRefundedEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.PAYMENT_REFUNDED_ROUTING_KEY,
+                    objectMapper.readValue(payload, PaymentRefundedEventV1.class)
+            );
+            case "PaymentRefundFailedEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.PAYMENT_REFUND_FAILED_ROUTING_KEY,
+                    objectMapper.readValue(payload, PaymentRefundFailedEventV1.class)
+            );
+            default -> throw new IllegalStateException("Unsupported outbox event type: " + eventType);
         }
     }
 }

@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS tickets DROP CONSTRAINT IF EXISTS tickets_status_check;

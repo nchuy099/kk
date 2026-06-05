@@ -1,5 +1,6 @@
 package com.eventhub.ticketservice.service;
 
+import com.eventhub.common.events.v1.TicketIssueFailedEventV1;
 import com.eventhub.common.events.v1.TicketIssuedEventV1;
 import com.eventhub.common.messaging.RabbitTopics;
 import com.eventhub.ticketservice.domain.TicketOutboxEventStatus;
@@ -33,14 +34,29 @@ public class TicketOutboxPublisher {
         var pending = outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(TicketOutboxEventStatus.PENDING);
         for (var event : pending) {
             try {
-                var payload = objectMapper.readValue(event.getPayload(), TicketIssuedEventV1.class);
-                rabbitTemplate.convertAndSend(RabbitTopics.TICKET_EXCHANGE, RabbitTopics.TICKET_ISSUED_ROUTING_KEY, payload);
+                publish(event.getEventType(), event.getPayload());
                 event.markSent();
             } catch (IOException exception) {
                 event.markFailed();
             } catch (RuntimeException exception) {
                 event.markFailed();
             }
+        }
+    }
+
+    private void publish(String eventType, String payload) throws IOException {
+        switch (eventType) {
+            case "TicketIssuedEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.TICKET_ISSUED_ROUTING_KEY,
+                    objectMapper.readValue(payload, TicketIssuedEventV1.class)
+            );
+            case "TicketIssueFailedEvent" -> rabbitTemplate.convertAndSend(
+                    RabbitTopics.SAGA_EXCHANGE,
+                    RabbitTopics.TICKET_ISSUE_FAILED_ROUTING_KEY,
+                    objectMapper.readValue(payload, TicketIssueFailedEventV1.class)
+            );
+            default -> throw new IllegalStateException("Unsupported outbox event type: " + eventType);
         }
     }
 }

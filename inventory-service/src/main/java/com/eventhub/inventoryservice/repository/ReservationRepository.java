@@ -13,4 +13,3 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
 
     List<Reservation> findByStatusAndExpiresAtBefore(ReservationStatus status, Instant now);
 }
-
